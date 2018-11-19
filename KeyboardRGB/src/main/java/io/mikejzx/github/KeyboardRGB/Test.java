@@ -14,7 +14,7 @@ public class Test {
 	private static final int DEVICE_INTERFACE = 1;
 	private static final int PACKET_SIZE = 264;
 	
-	public static void main(String[] args) throws IOException { Test t = new Test(); t.Invoke(); }
+	public static void maintest(String[] args) throws IOException { Test t = new Test(); t.Invoke(); }
 	
 	public void Invoke () throws IOException {
 		ClassPathLibraryLoader.loadNativeHIDLibrary();

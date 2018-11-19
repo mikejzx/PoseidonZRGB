@@ -43,7 +43,12 @@ public class MainClass
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
 	
-	public static void main2(String[] args) throws IOException {
+	// These 32-bit integers represent the hex colour codes.
+	// First 3 bytes are RGB colours respectively. Last byte is unused.
+	private static int colourStart = 0xFFFF0011;
+	private static int colourEnd = 0x0000FF11;
+	
+	public static void main(String[] args) throws IOException {
 		MainClass k = new MainClass();
 		k.Invoke(args);
 	}
@@ -51,19 +56,38 @@ public class MainClass
 	public void Invoke (String[] args) throws IOException {
 		System.out.println("Hello, world ! Invoked...");
 		
+		// May move argument handling into a seperate function
+		if (args.length > 0) { 
+			// Pass in arguments for colours.
+			if (args.length == 2) {
+				colourStart = Integer.parseInt(args[0]);
+				colourEnd = Integer.parseInt(args[1]);
+			}
+		}
+		
+		// Extract RGB bytes from hex code.
+		byte r0 = (byte)((colourStart >> 24) & 0xFF);
+		byte g0 = (byte)((colourStart >> 16) & 0xFF);
+		byte b0 = (byte)((colourStart >> 8) & 0xFF);
+		
+		System.out.println("Colour start: " + Utils.hex(colourStart) + " r0: " + Utils.hex(r0)  + " g0: " + Utils.hex(g0) + " b0: " + Utils.hex(b0));
+		System.out.println("Colour end: " + Utils.hex(colourEnd));
+		
+		if (true) { return; }
+		
+		// Load HID library.
         ClassPathLibraryLoader.loadNativeHIDLibrary();
 		final HIDManager manager = HIDManager.getInstance();
-		//HIDDevice device = manager.openById(VENDOR_ID, PRODUCT_ID, null);
 		HIDDevice device = null;
 		HIDDeviceInfo[] devices = manager.listDevices();
+		
+		// Iterate througheach device, and find the keyboard.
 		for (int i = 0; i < devices.length; i++) {
 			HIDDeviceInfo d = devices[i];
 			if (d.getInterface_number() == DEVICE_INTERFACE &&
 				d.getProduct_id() == PRODUCT_ID && d.getVendor_id() == VENDOR_ID) {
 				device = d.open();
-				if (device == null) {
-					continue;
-				}
+				if (device == null) { continue; }
 				else { 
 					System.out.println("Found device... breaking");
 					break; 
@@ -71,12 +95,18 @@ public class MainClass
 			}
 		}
 		if (device != null) {
+			// Don't even know what this does. xD need to do some research
 			device.disableBlocking();
 			
+			// Main loop
 			int i = 0;
 			while (i < 1) {
 				i++;
+				
+				// Actually set the LED's
 				SetLEDs(device);
+				
+				// Sleep for 1 ms
 				try { Thread.sleep(1); } 
 				catch (InterruptedException e) { e.printStackTrace(); }
 			}
@@ -95,14 +125,9 @@ public class MainClass
     	byte[] bufferRG = new byte[PACKET_SIZE];
     	byte[] bufferB = new byte[PACKET_SIZE];
     	for (int i = 0; i < PACKET_SIZE; i++) { bufferRG[i] = (byte)0x00; bufferB[i] = (byte)0x00; }
-    	bufferRG[0] = POSEIDON_START;
-    	bufferRG[1] = POSEIDON_LEDCMD;
-    	bufferRG[2] = POSEIDON_PROFILE;
-    	bufferRG[3] = POSEIDON_CHANNEL_REDGRN;
-    	bufferB[0] = POSEIDON_START;
-    	bufferB[1] = POSEIDON_LEDCMD;
-    	bufferB[2] = POSEIDON_PROFILE;
-    	bufferB[3] = POSEIDON_CHANNEL_BLU;
+    	bufferRG[0] = POSEIDON_START; bufferRG[1] = POSEIDON_LEDCMD; bufferRG[2] = POSEIDON_PROFILE; bufferRG[3] = POSEIDON_CHANNEL_REDGRN;
+    	bufferB[0] = POSEIDON_START; bufferB[1] = POSEIDON_LEDCMD; bufferB[2] = POSEIDON_PROFILE; bufferB[3] = POSEIDON_CHANNEL_BLU;
+    	// Assign colour bytes.
     	for (int x = 0; x < 23; x++) {
     		for (int y = 0; y < 6; y++) {
     			int index = keyMap[y][x];

@@ -12,6 +12,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="E:/Documents/GitHub/JavaKeyboardRGBs/KeyboardRGB/hidapi-1.1.jar"/>
+	<classpathentry kind="lib" path="/home/michael/Desktop/My Git Repos/PoseidonZ_RGB/KeyboardRGB/hidapi-1.1.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
