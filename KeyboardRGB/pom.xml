@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.mikejzx.github</groupId>
+  <artifactId>KeyboardRGB</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>KeyboardRGB</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+	  <!-- hid4java for cross-platform HID USB -->
+	  <dependency>
+		<groupId>org.hid4java</groupId>
+		<artifactId>hid4java</artifactId>
+		<version>0.5.0</version>
+	  </dependency>
+	  
+	  <!-- usb4java, without javax. (low-level version) -->
+	  <dependency>
+		<groupId>org.usb4java</groupId>
+		<artifactId>usb4java</artifactId>
+		<version>1.3.0</version>
+	  </dependency>
+</dependencies>
+</project>
