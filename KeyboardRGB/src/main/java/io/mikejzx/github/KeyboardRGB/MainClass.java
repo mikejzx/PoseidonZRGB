@@ -13,11 +13,26 @@ import com.codeminders.hidapi.HIDManager;
 				Michael Š.
 		Created: 17.11.2018 (~23:18)
 					:D
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 	Thanks to CalcProgrammer for his C++
 	visualiser project on GitHub, (very useful):
 	https://github.com/CalcProgrammer1/
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	NOTE TO THOSE WHO USE THIS CODE:
+	If you edit what goes in the packet that
+	is sent to the keyboard, be very careful,
+	as you could actually screw up your keyboard,
+	even if the packet is literally just zeros.
+	
+	If you do something strange to your
+	keyboard, just unplug it, and plug it in
+	again. It should refresh everything.
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	FX TODO LIST:
+	* Reactive w/ Backlight
+	* 'Rain' (Vertical wave)
+	* Random keys that change to random values slowly.
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 */
 
 public class MainClass 
@@ -32,6 +47,10 @@ public class MainClass
 	private static final byte POSEIDON_PROFILE = 0x01;
 	private static final byte POSEIDON_CHANNEL_REDGRN = 0x01;
 	private static final byte POSEIDON_CHANNEL_BLU = 0x02;
+	private static final short POSEIDON_KEYSX = 23;
+	private static final short POSEIDON_KEYSY = 6;
+	
+	//private static final int IPC_PORT = 6969;
 	
 	private static final int[][] keyMap = {
 	//   ESC NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
@@ -42,19 +61,40 @@ public class MainClass
 		{ 12, 0,  36,  44,  52,  60,   0,  68,   0,  76,  84,  92, 100, 108, 124,   0,   0,  38,   0,  54,  62,  86, 118 },
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
+	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
+	private static float[][] keyColours;
 	
 	// These 32-bit integers represent the hex colour codes.
 	// First 3 bytes are RGB colours respectively. Last byte is unused.
-	private static int colourStart = 0xFFFF0011;
-	private static int colourEnd = 0x0000FF11;
-	
-	public static void main(String[] args) throws IOException {
+	private static int colourStart = 0xFF000000;
+	private static int colourEnd = 0x00FFFF00;
+
+	public static void main(String[] args) throws IOException, InterruptedException {
 		MainClass k = new MainClass();
 		k.Invoke(args);
 	}
 	
-	public void Invoke (String[] args) throws IOException {
+	public void Invoke (String[] args) throws IOException, InterruptedException {
 		System.out.println("Hello, world ! Invoked...");
+		
+		keyColours = new float[POSEIDON_KEYSX][POSEIDON_KEYSY];
+		
+		/*
+		colourStart = 0xFF443300;
+		byte r0 = (byte)((colourStart >> 24) & 0xFF);
+		byte g0 = (byte)((colourStart >> 16) & 0xFF);
+		byte b0 = (byte)((colourStart >> 8) & 0xFF);
+		int rn = (int)((r0 & 0xFFFFFF) << 24);
+		int gn = (int)((g0 & 0xFFFFFF) << 16);
+		int bn = (int)((b0 & 0xFFFFFF) << 8);
+		int compl = ((r0 & 0xFFFFFF) << 24) + ((g0 & 0xFFFFFF) << 16) + ((b0 & 0xFFFFFF) << 8);
+		*/
+		
+		//SocketIPC ipc = new SocketIPC(IPC_PORT);
+		//ipc.send("MESSAGE");
+		//ipc.close();
+		
+		//if (true) { return; }
 		
 		// May move argument handling into a seperate function
 		if (args.length > 0) { 
@@ -64,16 +104,6 @@ public class MainClass
 				colourEnd = Integer.parseInt(args[1]);
 			}
 		}
-		
-		// Extract RGB bytes from hex code.
-		byte r0 = (byte)((colourStart >> 24) & 0xFF);
-		byte g0 = (byte)((colourStart >> 16) & 0xFF);
-		byte b0 = (byte)((colourStart >> 8) & 0xFF);
-		
-		System.out.println("Colour start: " + Utils.hex(colourStart) + " r0: " + Utils.hex(r0)  + " g0: " + Utils.hex(g0) + " b0: " + Utils.hex(b0));
-		System.out.println("Colour end: " + Utils.hex(colourEnd));
-		
-		if (true) { return; }
 		
 		// Load HID library.
         ClassPathLibraryLoader.loadNativeHIDLibrary();
@@ -95,19 +125,20 @@ public class MainClass
 			}
 		}
 		if (device != null) {
-			// Don't even know what this does. xD need to do some research
+			// This makes it so the device recieves packet immediately.
 			device.disableBlocking();
 			
 			// Main loop
 			int i = 0;
-			while (i < 1) {
+			final int len = 1000;
+			while (i < len) {
 				i++;
 				
 				// Actually set the LED's
 				SetLEDs(device);
 				
-				// Sleep for 1 ms
-				try { Thread.sleep(1); } 
+				// Sleep for 100 ms
+				try { Thread.sleep(100); } 
 				catch (InterruptedException e) { e.printStackTrace(); }
 			}
 			
@@ -128,29 +159,49 @@ public class MainClass
     	bufferRG[0] = POSEIDON_START; bufferRG[1] = POSEIDON_LEDCMD; bufferRG[2] = POSEIDON_PROFILE; bufferRG[3] = POSEIDON_CHANNEL_REDGRN;
     	bufferB[0] = POSEIDON_START; bufferB[1] = POSEIDON_LEDCMD; bufferB[2] = POSEIDON_PROFILE; bufferB[3] = POSEIDON_CHANNEL_BLU;
     	// Assign colour bytes.
-    	for (int x = 0; x < 23; x++) {
-    		for (int y = 0; y < 6; y++) {
+    	for (int x = 0; x < POSEIDON_KEYSX; x++) {
+    		for (int y = 0; y < POSEIDON_KEYSY; y++) {
     			int index = keyMap[y][x];
     			if (index != 0) {
-    				bufferRG[index] = (byte)0xFF;
-    				bufferRG[index + 128] = (byte)0x88;
-    				bufferB[index] = (byte)0xFF;
+    				int colour = GetColourAtKey(x, y);
+    				bufferRG[index] = (byte)((colour >> 24) & 0xFF);
+    				bufferRG[index + 128] = (byte)((colour >> 16) & 0xFF);
+    				bufferB[index] = (byte)((colour >> 8) & 0xFF);
     			}
     		}
     	}
     	
     	// Send packets
 		try { 
-			byte[] buffer = new byte[PACKET_SIZE];
-			for (int i = 0; i < buffer.length; i++) { buffer[i] = (byte)0x00; }
-			
 			//device.write(bufferRG);
-			device.sendFeatureReport(buffer);
+			device.sendFeatureReport(bufferRG);
 			Thread.sleep(1);
 			//device.write(bufferB);
-			device.sendFeatureReport(buffer);
+			device.sendFeatureReport(bufferB);
 		} 
 		catch (IOException e) { e.printStackTrace(); }
 		catch (InterruptedException e) { e.printStackTrace(); }
+	}
+	
+	// TODO: Change this based on effect-type.
+	private int GetColourAtKey (int keyx, int keyy) {
+		//return Utils.lerp(colourStart, colourEnd, keyColours[keyx][keyy]);
+		
+		// This could probably be optimised quite heavily.
+		float lerp = keyColours[keyx][keyy];
+		byte r0 = (byte)((colourStart >> 24) & 0xFF);
+		byte g0 = (byte)((colourStart >> 16) & 0xFF);
+		byte b0 = (byte)((colourStart >> 8) & 0xFF);
+		byte r1 = (byte)((colourEnd >> 24) & 0xFF);
+		byte g1 = (byte)((colourEnd >> 16) & 0xFF);
+		byte b1 = (byte)((colourEnd >> 8) & 0xFF);
+		byte rl = (byte)Utils.lerp(Byte.toUnsignedInt(r0), Byte.toUnsignedInt(r1), lerp);
+		byte gl = (byte)Utils.lerp(Byte.toUnsignedInt(g0), Byte.toUnsignedInt(g1), lerp);
+		byte bl = (byte)Utils.lerp(Byte.toUnsignedInt(b0), Byte.toUnsignedInt(b1), lerp);
+		int rn = (rl & 0xFFFFFF) << 24;
+		int gn = (gl & 0xFFFFFF) << 16;
+		int bn = (bl & 0xFFFFFF) << 8;
+		return (rn + gn + bn);
+		//return (int)Math.round(r0 * lerp);
 	}
 }
