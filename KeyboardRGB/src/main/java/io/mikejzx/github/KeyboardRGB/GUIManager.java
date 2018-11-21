@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -56,5 +57,13 @@ public class GUIManager {
 		// Button
 		JButton button1 = new JButton("Button 1");
 		panel.add(button1);
+		
+		// Dropdown
+		JComboBox<String> combo = new JComboBox<String>();
+		combo.addItem("Backlit");
+		combo.addItem("Reactive + Backlight");
+		combo.addItem("Rain");
+		combo.addItem("Random Dots");
+		panel.add(combo);
 	}
 }

@@ -57,8 +57,6 @@ public class MainClass implements NativeKeyListener
 	private static final short POSEIDON_KEYSX = 23;
 	private static final short POSEIDON_KEYSY = 6;
 	
-	//private static final int IPC_PORT = 6969;
-	
 	private static final int[][] keyMap = {
 	//   ESC NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
 		{ 8,  0,  16,  24,  32,  40,   0,  48,  56,  64,  72,   0,  80,  88,  96, 104, 112, 120, 128,   0,   0,   0,   0 },
@@ -69,18 +67,26 @@ public class MainClass implements NativeKeyListener
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
 	
-	// Not yet compelte.
+	// Not yet compelte. Just for testing. For some reason windows has differnet keycodes...
 	private static final int[][] keyMapKeycodes = {
-	//   ESC NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
-		{ 27, 0,  112, 113, 114,115,   0, 116, 117, 118, 119,   0, 120, 121, 122, 123,  44, 145,  19,   0,   0,   0,   0 },
+	//   ESC  NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
+		{ 1,   0,   59, 60,  61,  62,   0,  63,  64,  65,  66,   0,  67, 68,  87,  88, 3639,  70, 3653,   0,   0,   0,   0 },
+		{ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0,   0,   0,    0,   0,    0,   0,   0,   0,   0 },
+		//tab NULL  q    w    e    r    t    z    i    u    o    p  NULL  [    ]    \   del  end  pgdn  7nu  8nu  9nu plus
+		{15,   0,  16,  17,  18,  19,  20,  21,  23,  22,  24,  25,   0, 26,  27,  43, 3667,3663,    9,   8,   9,  10,3662 },
+		
+		//{ 27, 0,  112, 113, 114,115,   0, 116, 117, 118, 119,   0, 120, 121, 122, 123,  44, 145,  19,   0,   0,   0,   0 },
 	};
 	
 	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
 	private static float[][] keyColours;
 	
+	// The keys going back to zero
+	private static boolean[][] keysDropping;
+	
 	// These 32-bit integers represent the hex colour codes.
 	// First 3 bytes are RGB colours respectively. Last byte is unused.
-	private static int colourStart = 0xFF000000;
+	private static int colourStart = 0x2288880;
 	private static int colourEnd = 0x00FFFF00;
 	
 	private static GUIManager gui;
@@ -102,6 +108,7 @@ public class MainClass implements NativeKeyListener
 		gui.initialise();
 		
 		keyColours = new float[POSEIDON_KEYSX][POSEIDON_KEYSY];
+		keysDropping = new boolean[POSEIDON_KEYSX][POSEIDON_KEYSY];
 		
 		//if (true) { return; }
 		
@@ -134,17 +141,29 @@ public class MainClass implements NativeKeyListener
 			}
 		}
 		if (device != null) {
-			// This makes it so the device recieves packet immediately.
-			device.disableBlocking();
+			// This makes the device recieve packet immediately.
+			//device.disableBlocking();
 			
 			// Main loop
-			int i = 0;
-			final int len = 1000;
-			while (i < len || kill) {
-				i++;
+			//int i = 0;
+			//final int len = 1000;
+			while (kill ^ true) {
+				//i++;
 				
 				// Actually set the LED's
-				//setLEDs(device);
+				setLEDs(device);
+				
+				for (int x = 0; x < POSEIDON_KEYSX; x++) {
+					for (int y = 0; y < keyMapKeycodes.length; y++) {
+						if (keysDropping[x][y]) {
+							keyColours[x][y] -= 0.1f;
+							if (keyColours[x][y] <= 0.0f) {
+								keyColours[x][y] = 0.0f;
+								keysDropping[x][y] = false;
+							}
+						}
+					}
+				}
 				
 				// Sleep for 100 ms
 				try { Thread.sleep(100); } 
@@ -214,14 +233,38 @@ public class MainClass implements NativeKeyListener
 		//return (int)Math.round(r0 * lerp);
 	}
 
+	// This functions can be optimised alot. Just don't do it in a for-loop. This is temporary...
+	private void setKeyLerpValueFromKeymap (int keycode, float newlerp) {
+		for (int x = 0; x < POSEIDON_KEYSX - 1; x++) {
+			for (int y = 0; y < keyMapKeycodes.length - 1; y++) {
+				if (keycode == keyMapKeycodes[y][x]) {
+					if (newlerp == 0.0f) {
+						keysDropping[x][y] = true;
+					}
+					else {
+						keyColours[x][y] = newlerp;
+					}
+					break;
+				}
+			}
+		}
+	}
+	
 	@Override
 	public void nativeKeyPressed(NativeKeyEvent arg0) {
-		System.out.println(arg0.getRawCode());
-		//System.out.println(arg0.getKeyCode());
+		//System.out.println(arg0.getRawCode());
+		System.out.println(arg0.getKeyCode());
+		
+		int keycode = arg0.getKeyCode();
+		setKeyLerpValueFromKeymap(keycode, 1.0f);
 	}
 
+	// May do a slow-lerp to 0
 	@Override
-	public void nativeKeyReleased(NativeKeyEvent arg0) { }
+	public void nativeKeyReleased(NativeKeyEvent arg0) { 
+		int keycode = arg0.getKeyCode();
+		setKeyLerpValueFromKeymap(keycode, 0.0f);
+	}
 
 	@Override
 	public void nativeKeyTyped(NativeKeyEvent arg0) { }
