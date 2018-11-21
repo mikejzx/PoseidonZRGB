@@ -7,6 +7,10 @@ import com.codeminders.hidapi.HIDDevice;
 import com.codeminders.hidapi.HIDDeviceInfo;
 import com.codeminders.hidapi.HIDManager;
 
+/*
+ * IGNORE THIS CLASS, IT IS SIMPLY FOR TESTING-PURPOSES-ONLY
+ * */
+
 public class Test {
 
 	private static final short VENDOR_ID = 0x264a;

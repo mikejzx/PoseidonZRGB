@@ -3,6 +3,9 @@ package io.mikejzx.github.KeyboardRGB;
 
 import java.io.IOException;
 
+import org.jnativehook.keyboard.NativeKeyEvent;
+import org.jnativehook.keyboard.NativeKeyListener;
+
 import com.codeminders.hidapi.ClassPathLibraryLoader;
 import com.codeminders.hidapi.HIDDevice;
 import com.codeminders.hidapi.HIDDeviceInfo;
@@ -35,8 +38,12 @@ import com.codeminders.hidapi.HIDManager;
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 */
 
-public class MainClass 
+public class MainClass implements NativeKeyListener
 {
+	public static boolean kill = false;
+	public static void kill() { kill = true; }
+	public static KeystrokeSniffer sniffer;
+	
 	private static final short VENDOR_ID = 0x264a;
 	private static final short PRODUCT_ID = 0x3006;
 	private static final int DEVICE_INTERFACE = 1;
@@ -61,6 +68,13 @@ public class MainClass
 		{ 12, 0,  36,  44,  52,  60,   0,  68,   0,  76,  84,  92, 100, 108, 124,   0,   0,  38,   0,  54,  62,  86, 118 },
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
+	
+	// Not yet compelte.
+	private static final int[][] keyMapKeycodes = {
+	//   ESC NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
+		{ 27, 0,  112, 113, 114,115,   0, 116, 117, 118, 119,   0, 120, 121, 122, 123,  44, 145,  19,   0,   0,   0,   0 },
+	};
+	
 	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
 	private static float[][] keyColours;
 	
@@ -68,31 +82,26 @@ public class MainClass
 	// First 3 bytes are RGB colours respectively. Last byte is unused.
 	private static int colourStart = 0xFF000000;
 	private static int colourEnd = 0x00FFFF00;
-
+	
+	private static GUIManager gui;
+	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		MainClass k = new MainClass();
-		k.Invoke(args);
+		k.invoke(args);
 	}
 	
-	public void Invoke (String[] args) throws IOException, InterruptedException {
+	public void invoke (String[] args) throws IOException, InterruptedException {
 		System.out.println("Hello, world ! Invoked...");
 		
+		// Key sniffer
+		sniffer = new KeystrokeSniffer();
+		sniffer.Initialise(this);
+		
+		// Initialise GUI.
+		gui = new GUIManager();
+		gui.initialise();
+		
 		keyColours = new float[POSEIDON_KEYSX][POSEIDON_KEYSY];
-		
-		/*
-		colourStart = 0xFF443300;
-		byte r0 = (byte)((colourStart >> 24) & 0xFF);
-		byte g0 = (byte)((colourStart >> 16) & 0xFF);
-		byte b0 = (byte)((colourStart >> 8) & 0xFF);
-		int rn = (int)((r0 & 0xFFFFFF) << 24);
-		int gn = (int)((g0 & 0xFFFFFF) << 16);
-		int bn = (int)((b0 & 0xFFFFFF) << 8);
-		int compl = ((r0 & 0xFFFFFF) << 24) + ((g0 & 0xFFFFFF) << 16) + ((b0 & 0xFFFFFF) << 8);
-		*/
-		
-		//SocketIPC ipc = new SocketIPC(IPC_PORT);
-		//ipc.send("MESSAGE");
-		//ipc.close();
 		
 		//if (true) { return; }
 		
@@ -131,11 +140,11 @@ public class MainClass
 			// Main loop
 			int i = 0;
 			final int len = 1000;
-			while (i < len) {
+			while (i < len || kill) {
 				i++;
 				
 				// Actually set the LED's
-				SetLEDs(device);
+				//setLEDs(device);
 				
 				// Sleep for 100 ms
 				try { Thread.sleep(100); } 
@@ -151,7 +160,7 @@ public class MainClass
 		System.out.println("Applcation termination...");
 	}
 	
-	private void SetLEDs (HIDDevice device) {
+	private void setLEDs (HIDDevice device) {
 		// Initialise packets.
     	byte[] bufferRG = new byte[PACKET_SIZE];
     	byte[] bufferB = new byte[PACKET_SIZE];
@@ -163,7 +172,7 @@ public class MainClass
     		for (int y = 0; y < POSEIDON_KEYSY; y++) {
     			int index = keyMap[y][x];
     			if (index != 0) {
-    				int colour = GetColourAtKey(x, y);
+    				int colour = getColourAtKey(x, y);
     				bufferRG[index] = (byte)((colour >> 24) & 0xFF);
     				bufferRG[index + 128] = (byte)((colour >> 16) & 0xFF);
     				bufferB[index] = (byte)((colour >> 8) & 0xFF);
@@ -184,7 +193,7 @@ public class MainClass
 	}
 	
 	// TODO: Change this based on effect-type.
-	private int GetColourAtKey (int keyx, int keyy) {
+	private int getColourAtKey (int keyx, int keyy) {
 		//return Utils.lerp(colourStart, colourEnd, keyColours[keyx][keyy]);
 		
 		// This could probably be optimised quite heavily.
@@ -204,4 +213,16 @@ public class MainClass
 		return (rn + gn + bn);
 		//return (int)Math.round(r0 * lerp);
 	}
+
+	@Override
+	public void nativeKeyPressed(NativeKeyEvent arg0) {
+		System.out.println(arg0.getRawCode());
+		//System.out.println(arg0.getKeyCode());
+	}
+
+	@Override
+	public void nativeKeyReleased(NativeKeyEvent arg0) { }
+
+	@Override
+	public void nativeKeyTyped(NativeKeyEvent arg0) { }
 }
