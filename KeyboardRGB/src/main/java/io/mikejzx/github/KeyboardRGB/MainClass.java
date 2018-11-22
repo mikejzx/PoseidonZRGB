@@ -67,17 +67,18 @@ public class MainClass implements NativeKeyListener
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
 	
-	// Not yet compelte. Just for testing. For some reason windows has differnet keycodes...
-	private static final int[][] keyMapKeycodes = {
+	// Not yet compelte. Just for testing. For some reason windows has differnet keycodes... Can also be a bit cleaner...
+	/*private static final int[][] keyMapKeycodes = {
 	//   ESC  NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
 		{  1,   0,   59, 60,  61,  62,   0,  63,  64,  65,  66,   0,  67, 68,  87,  88, 3639,  70, 3653,   0,   0,   0,   0 },
-		//tilde 1    2    3    4    5    6    7    8    0    -    +  back  ins  home  pgup num  div   mul  -
-		{ 41,   2,   3,   4,   5,   6,   7,   8,   9,  11,  12,  13,   14, 3666,3655, 3657,69,   53, 3639, 3658,   0,   0,   0 },
-		//tab NULL  q    w    e    r    t    z    i    u    o    p  NULL  [    ]    \   del  end  pgdn  7nu  8nu  9nu plus
-		{ 15,   0,  16,  17,  18,  19,  20,  21,  23,  22,  24,  25,   0, 26,  27,  43, 3667,3663,    9,   8,   9,  10,3662 },
+		//tilde 1    2    3    4    5    6    7    8   9     0 null   -    +  back      ins  home  pgup num  div   mul  -
+		{ 41,   2,   3,   4,   5,   6,   7,   8,   9,  10,   11, 0,  12,  13,   14, 0, 3666,3655, 3657, 69,   53, 3639, 3658 },
+		//tab NULL  q    w    e    r NULL, t    z    U    I    o    p   [    ]    \   del  end  pgdn  7nu  8nu  9nu plus
+		{ 15,   0,  16,  17,  18,  19,  0, 20,  21,  22,  23,  24,  25, 26,  27,  43, 3667,3663,3665, 3655, 57416, 3657 },
 		
 		//{ 27, 0,  112, 113, 114,115,   0, 116, 117, 118, 119,   0, 120, 121, 122, 123,  44, 145,  19,   0,   0,   0,   0 },
-	};
+	};*/
+	private static int[][] keyMapKeycodes;
 	
 	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
 	private static float[][] keyColours;
@@ -87,11 +88,11 @@ public class MainClass implements NativeKeyListener
 	
 	// These 32-bit integers represent the hex colour codes.
 	// First 3 bytes are RGB colours respectively. Last byte is unused.
-	private static int colourStart = 0x2288880;
-	private static int colourEnd = 0x00FFFF00;
+	private static int colourStart = 0xFF220000; //0x4411110;
+	private static int colourEnd = 0xFFFF0000; //0xFF002200;
 	
 	private static GUIManager gui;
-	
+	/*MICHAEL SEKC IS AWESOMEMMM*/
 	public static void main(String[] args) throws IOException, InterruptedException {
 		MainClass k = new MainClass();
 		k.invoke(args);
@@ -111,7 +112,15 @@ public class MainClass implements NativeKeyListener
 		keyColours = new float[POSEIDON_KEYSX][POSEIDON_KEYSY];
 		keysDropping = new boolean[POSEIDON_KEYSX][POSEIDON_KEYSY];
 		
-		//if (true) { return; }
+		final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
+		keyMapKeycodes = new int[][] {
+			{ NativeKeyEvent.VC_ESCAPE, 0, NativeKeyEvent.VC_F1, NativeKeyEvent.VC_F2, NativeKeyEvent.VC_F3,  NativeKeyEvent.VC_F4, 0, NativeKeyEvent.VC_F5,  NativeKeyEvent.VC_F6, NativeKeyEvent.VC_F7, NativeKeyEvent.VC_F8, 0, NativeKeyEvent.VC_F9, NativeKeyEvent.VC_F10, NativeKeyEvent.VC_F11, NativeKeyEvent.VC_F12, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.VC_SCROLL_LOCK, NativeKeyEvent.VC_PAUSE },
+			{ 41, NativeKeyEvent.VC_1,  NativeKeyEvent.VC_2, NativeKeyEvent.VC_3,  NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, NativeKeyEvent.VC_0, 0, 12, 13, NativeKeyEvent.VC_BACKSPACE, 0,  NativeKeyEvent.VC_INSERT,  NativeKeyEvent.VC_HOME,  NativeKeyEvent.VC_PAGE_UP,  VC_NUMLOCK, VC_DIV, VC_MUL, VC_MINUS },
+			{ NativeKeyEvent.VC_TAB, 0, NativeKeyEvent.VC_Q,NativeKeyEvent.VC_W, NativeKeyEvent.VC_E, NativeKeyEvent.VC_R, NativeKeyEvent.VC_R, NativeKeyEvent.VC_T, NativeKeyEvent.VC_Y, NativeKeyEvent.VC_U, NativeKeyEvent.VC_I, NativeKeyEvent.VC_O, NativeKeyEvent.VC_P, NativeKeyEvent.VC_OPEN_BRACKET, NativeKeyEvent.VC_CLOSE_BRACKET, VC_PIPE, NativeKeyEvent.VC_DELETE, NativeKeyEvent.VC_END, NativeKeyEvent.VC_PAGE_DOWN, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, VC_ADD },
+			{ NativeKeyEvent.VC_CAPS_LOCK, 0, NativeKeyEvent.VC_A, NativeKeyEvent.VC_S, NativeKeyEvent.VC_D, NativeKeyEvent.VC_F, 0, NativeKeyEvent.VC_G, NativeKeyEvent.VC_H, NativeKeyEvent.VC_J, NativeKeyEvent.VC_K, NativeKeyEvent.VC_L, NativeKeyEvent.VC_SEMICOLON, NativeKeyEvent.VC_QUOTE, NativeKeyEvent.VC_ENTER, 0, 0, 0, 0, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6 },
+			{ NativeKeyEvent.VC_SHIFT, 0, NativeKeyEvent.VC_Z, NativeKeyEvent.VC_X, NativeKeyEvent.VC_C, NativeKeyEvent.VC_V, 0, NativeKeyEvent.VC_B, 0, NativeKeyEvent.VC_N, NativeKeyEvent.VC_M, NativeKeyEvent.VC_COMMA, NativeKeyEvent.VC_PERIOD, VC_QMARK, VC_RSHIFT, 0, 0, NativeKeyEvent.VC_UP, 0, NativeKeyEvent.VC_1, NativeKeyEvent.VC_2, NativeKeyEvent.VC_3 },
+			{ NativeKeyEvent.VC_CONTROL, VC_SUPER, NativeKeyEvent.VC_ALT, 0, 0, 0, 0, NativeKeyEvent.VC_SPACE, 0, 0, 0, 0, NativeKeyEvent.VC_ALT, 0, NativeKeyEvent.VC_CONTEXT_MENU, NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT, NativeKeyEvent.VC_DOWN, NativeKeyEvent.VC_RIGHT, NativeKeyEvent.VC_0, 0, VC_FULLSTOP, NativeKeyEvent.VC_ENTER },
+		};
 		
 		// May move argument handling into a seperate function
 		if (args.length > 0) { 
@@ -143,16 +152,12 @@ public class MainClass implements NativeKeyListener
 		}
 		if (device != null) {
 			// This makes the device recieve packet immediately.
-			//device.disableBlocking();
+			device.disableBlocking();
 			
 			// Main loop
-			//int i = 0;
-			//final int len = 1000;
 			while (kill ^ true) {
-				//i++;
-				
 				// Actually set the LED's
-				//setLEDs(device);
+				setLEDs(device);
 				
 				for (int x = 0; x < POSEIDON_KEYSX; x++) {
 					for (int y = 0; y < keyMapKeycodes.length; y++) {
@@ -165,7 +170,6 @@ public class MainClass implements NativeKeyListener
 						}
 					}
 				}
-				
 				// Sleep for 100 ms
 				try { Thread.sleep(100); } 
 				catch (InterruptedException e) { e.printStackTrace(); }
@@ -202,10 +206,8 @@ public class MainClass implements NativeKeyListener
     	
     	// Send packets
 		try { 
-			//device.write(bufferRG);
 			device.sendFeatureReport(bufferRG);
-			Thread.sleep(1);
-			//device.write(bufferB);
+			Thread.sleep(10); // Was 1, set to 10 to prevent weird colour thing,
 			device.sendFeatureReport(bufferB);
 		} 
 		catch (IOException e) { e.printStackTrace(); }
@@ -214,8 +216,6 @@ public class MainClass implements NativeKeyListener
 	
 	// TODO: Change this based on effect-type.
 	private int getColourAtKey (int keyx, int keyy) {
-		//return Utils.lerp(colourStart, colourEnd, keyColours[keyx][keyy]);
-		
 		// This could probably be optimised quite heavily.
 		float lerp = keyColours[keyx][keyy];
 		byte r0 = (byte)((colourStart >> 24) & 0xFF);
@@ -236,8 +236,8 @@ public class MainClass implements NativeKeyListener
 
 	// This functions can be optimised alot. Just don't do it in a for-loop. This is temporary...
 	private void setKeyLerpValueFromKeymap (int keycode, float newlerp) {
-		for (int x = 0; x < POSEIDON_KEYSX - 1; x++) {
-			for (int y = 0; y < keyMapKeycodes.length; y++) {
+		for (int y = 0; y < keyMapKeycodes.length; y++) {
+			for (int x = 0; x < keyMapKeycodes[y].length; x++) {
 				if (keycode == keyMapKeycodes[y][x]) {
 					if (newlerp == 0.0f) {
 						keysDropping[x][y] = true;
@@ -254,7 +254,7 @@ public class MainClass implements NativeKeyListener
 	@Override
 	public void nativeKeyPressed(NativeKeyEvent arg0) {
 		//System.out.println(arg0.getRawCode());
-		System.out.println(arg0.getKeyCode());
+		//System.out.println(arg0.getKeyCode());
 		
 		int keycode = arg0.getKeyCode();
 		setKeyLerpValueFromKeymap(keycode, 1.0f);
