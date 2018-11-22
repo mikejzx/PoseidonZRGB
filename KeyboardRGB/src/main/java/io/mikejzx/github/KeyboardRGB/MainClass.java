@@ -70,10 +70,11 @@ public class MainClass implements NativeKeyListener
 	// Not yet compelte. Just for testing. For some reason windows has differnet keycodes...
 	private static final int[][] keyMapKeycodes = {
 	//   ESC  NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
-		{ 1,   0,   59, 60,  61,  62,   0,  63,  64,  65,  66,   0,  67, 68,  87,  88, 3639,  70, 3653,   0,   0,   0,   0 },
-		{ 0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  0,   0,   0,    0,   0,    0,   0,   0,   0,   0 },
+		{  1,   0,   59, 60,  61,  62,   0,  63,  64,  65,  66,   0,  67, 68,  87,  88, 3639,  70, 3653,   0,   0,   0,   0 },
+		//tilde 1    2    3    4    5    6    7    8    0    -    +  back  ins  home  pgup num  div   mul  -
+		{ 41,   2,   3,   4,   5,   6,   7,   8,   9,  11,  12,  13,   14, 3666,3655, 3657,69,   53, 3639, 3658,   0,   0,   0 },
 		//tab NULL  q    w    e    r    t    z    i    u    o    p  NULL  [    ]    \   del  end  pgdn  7nu  8nu  9nu plus
-		{15,   0,  16,  17,  18,  19,  20,  21,  23,  22,  24,  25,   0, 26,  27,  43, 3667,3663,    9,   8,   9,  10,3662 },
+		{ 15,   0,  16,  17,  18,  19,  20,  21,  23,  22,  24,  25,   0, 26,  27,  43, 3667,3663,    9,   8,   9,  10,3662 },
 		
 		//{ 27, 0,  112, 113, 114,115,   0, 116, 117, 118, 119,   0, 120, 121, 122, 123,  44, 145,  19,   0,   0,   0,   0 },
 	};
@@ -151,7 +152,7 @@ public class MainClass implements NativeKeyListener
 				//i++;
 				
 				// Actually set the LED's
-				setLEDs(device);
+				//setLEDs(device);
 				
 				for (int x = 0; x < POSEIDON_KEYSX; x++) {
 					for (int y = 0; y < keyMapKeycodes.length; y++) {
@@ -236,7 +237,7 @@ public class MainClass implements NativeKeyListener
 	// This functions can be optimised alot. Just don't do it in a for-loop. This is temporary...
 	private void setKeyLerpValueFromKeymap (int keycode, float newlerp) {
 		for (int x = 0; x < POSEIDON_KEYSX - 1; x++) {
-			for (int y = 0; y < keyMapKeycodes.length - 1; y++) {
+			for (int y = 0; y < keyMapKeycodes.length; y++) {
 				if (keycode == keyMapKeycodes[y][x]) {
 					if (newlerp == 0.0f) {
 						keysDropping[x][y] = true;
