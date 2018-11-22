@@ -1,5 +1,6 @@
 package io.mikejzx.github.KeyboardRGB;
 
+import java.awt.ItemSelectable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -13,6 +14,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
+
+import io.mikejzx.github.KeyboardRGB.MainClass.LEDMode;
 
 public class GUIWindow extends JFrame implements WindowListener, ActionListener, ItemListener {
 	
@@ -62,5 +65,39 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 		}
 	}
 	@Override
-	public void itemStateChanged(ItemEvent arg0) { }
+	public void itemStateChanged(ItemEvent a) { 
+		ItemSelectable item = a.getItemSelectable();
+
+		// The effect type was changed
+		if (item == GUIManager.combo) {
+			String str = item.getSelectedObjects()[0].toString();
+			LEDMode mode = LEDMode.Backlit;
+			switch (str) {
+				// Backlit mode
+				case (GUIManager.COMBOTYPE_STR_BACKLIT): {
+					mode = LEDMode.Backlit;
+				} break;
+				
+				case (GUIManager.COMBOTYPE_STR_REACTIVEBACKLIT): {
+					mode = LEDMode.ReactiveBacklit;
+				} break;
+				
+				case (GUIManager.COMBOTYPE_STR_RAIN): {
+					mode = LEDMode.Rain;
+				} break;
+				
+				case (GUIManager.COMBOTYPE_STR_RAND): {
+					mode = LEDMode.Random;
+				} break;
+				
+				// Undefined
+				default: {
+					str = "UNDEFINED_CASE[" + str + "]";
+					mode = LEDMode.Backlit;
+				} break;
+			}
+			System.out.println("Changed mode to " + str);
+			MainClass.setLEDMode(mode);
+		}
+	}
 }

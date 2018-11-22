@@ -40,6 +40,8 @@ import com.codeminders.hidapi.HIDManager;
 
 public class MainClass implements NativeKeyListener
 {
+	public static String SOFTWARE_VERSION = "0.0.1_06-SNAPSHOT(alpha)";
+	
 	public static boolean kill = false;
 	public static void kill() { kill = true; }
 	public static KeystrokeSniffer sniffer;
@@ -92,7 +94,19 @@ public class MainClass implements NativeKeyListener
 	private static int colourEnd = 0xFFFF0000; //0xFF002200;
 	
 	private static GUIManager gui;
-	/*MICHAEL SEKC IS AWESOMEMMM*/
+	
+	public static enum LEDMode {
+		Backlit, ReactiveBacklit, Rain, Random
+	};
+	
+	private static LEDMode ledMode = LEDMode.ReactiveBacklit;
+	private static boolean update = false;
+	
+	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
+	// TURN THIS OFF IN FINAL BUILDS.
+	private boolean RUN_WITHOUT_DEVICE = false;
+
+	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		MainClass k = new MainClass();
 		k.invoke(args);
@@ -100,6 +114,10 @@ public class MainClass implements NativeKeyListener
 	
 	public void invoke (String[] args) throws IOException, InterruptedException {
 		System.out.println("Hello, world ! Invoked...");
+		
+		if (RUN_WITHOUT_DEVICE) {
+			System.err.println("WARNING: RUN_WITHOUT_DEVICE IS TRUE! THIS SHOULD BE FALSE IF THE LEDS ARE TO BE SET !");
+		}
 		
 		// Key sniffer
 		sniffer = new KeystrokeSniffer();
@@ -136,44 +154,28 @@ public class MainClass implements NativeKeyListener
 		final HIDManager manager = HIDManager.getInstance();
 		HIDDevice device = null;
 		HIDDeviceInfo[] devices = manager.listDevices();
-		
-		// Iterate througheach device, and find the keyboard.
-		for (int i = 0; i < devices.length; i++) {
-			HIDDeviceInfo d = devices[i];
-			if (d.getInterface_number() == DEVICE_INTERFACE &&
-				d.getProduct_id() == PRODUCT_ID && d.getVendor_id() == VENDOR_ID) {
-				device = d.open();
-				if (device == null) { continue; }
-				else { 
-					System.out.println("Found device... breaking");
-					break; 
+		if (!RUN_WITHOUT_DEVICE) {
+			// Iterate througheach device, and find the keyboard.
+			for (int i = 0; i < devices.length; i++) {
+				HIDDeviceInfo d = devices[i];
+				if (d.getInterface_number() == DEVICE_INTERFACE &&
+					d.getProduct_id() == PRODUCT_ID && d.getVendor_id() == VENDOR_ID) {
+					device = d.open();
+					if (device == null) { continue; }
+					else { 
+						System.out.println("Found device... breaking");
+						break; 
+					}
 				}
 			}
 		}
-		if (device != null) {
+		
+		if (device != null || RUN_WITHOUT_DEVICE) {
 			// This makes the device recieve packet immediately.
-			device.disableBlocking();
+			//device.disableBlocking();
 			
 			// Main loop
-			while (kill ^ true) {
-				// Actually set the LED's
-				setLEDs(device);
-				
-				for (int x = 0; x < POSEIDON_KEYSX; x++) {
-					for (int y = 0; y < keyMapKeycodes.length; y++) {
-						if (keysDropping[x][y]) {
-							keyColours[x][y] -= 0.1f;
-							if (keyColours[x][y] <= 0.0f) {
-								keyColours[x][y] = 0.0f;
-								keysDropping[x][y] = false;
-							}
-						}
-					}
-				}
-				// Sleep for 100 ms
-				try { Thread.sleep(100); } 
-				catch (InterruptedException e) { e.printStackTrace(); }
-			}
+			mainLoop(device);
 			
 			device.close();
 		}
@@ -184,7 +186,58 @@ public class MainClass implements NativeKeyListener
 		System.out.println("Applcation termination...");
 	}
 	
+	private void mainLoop (HIDDevice device) throws InterruptedException {
+		while (kill ^ true) {
+			switch (ledMode) {
+				case Backlit: {
+					setLEDs(device);
+					update = false;
+					while (!update) { Thread.sleep(1); }
+				} break;
+			
+				case ReactiveBacklit: {
+					// Actually set the LED's
+					setLEDs(device);
+					
+					int droppingCount = 0;
+					for (int x = 0; x < POSEIDON_KEYSX; x++) {
+						for (int y = 0; y < keyMapKeycodes.length; y++) {
+							if (keysDropping[x][y]) {
+								keyColours[x][y] -= 0.1f;
+								droppingCount++;
+								if (keyColours[x][y] <= 0.0f) {
+									keyColours[x][y] = 0.0f;
+									keysDropping[x][y] = false;
+								}
+							}
+						}
+					}
+					if (droppingCount == 0) {
+						update = false;
+					}
+					
+					// Sleep for 100 ms
+					Thread.sleep(100);
+					
+					// Wait for next update.
+					// This is very important, it makes the flicker less noticeable.
+					// So it is only visible when keys are actually changinc colour.
+					while (!update) { Thread.sleep(1); }
+				} break;
+				
+				default: {
+					setLEDs(device);
+					update = false;
+					while (!update) { Thread.sleep(1); }
+				} break;
+			}
+		}
+	}
+	
 	private void setLEDs (HIDDevice device) {
+		if (RUN_WITHOUT_DEVICE || device == null) {
+			return;
+		}
 		// Initialise packets.
     	byte[] bufferRG = new byte[PACKET_SIZE];
     	byte[] bufferB = new byte[PACKET_SIZE];
@@ -214,24 +267,38 @@ public class MainClass implements NativeKeyListener
 		catch (InterruptedException e) { e.printStackTrace(); }
 	}
 	
-	// TODO: Change this based on effect-type.
+	public static void setLEDMode (LEDMode newMode) {
+		ledMode = newMode;
+		update = true;
+	}
+	
 	private int getColourAtKey (int keyx, int keyy) {
-		// This could probably be optimised quite heavily.
-		float lerp = keyColours[keyx][keyy];
-		byte r0 = (byte)((colourStart >> 24) & 0xFF);
-		byte g0 = (byte)((colourStart >> 16) & 0xFF);
-		byte b0 = (byte)((colourStart >> 8) & 0xFF);
-		byte r1 = (byte)((colourEnd >> 24) & 0xFF);
-		byte g1 = (byte)((colourEnd >> 16) & 0xFF);
-		byte b1 = (byte)((colourEnd >> 8) & 0xFF);
-		byte rl = (byte)Utils.lerp(Byte.toUnsignedInt(r0), Byte.toUnsignedInt(r1), lerp);
-		byte gl = (byte)Utils.lerp(Byte.toUnsignedInt(g0), Byte.toUnsignedInt(g1), lerp);
-		byte bl = (byte)Utils.lerp(Byte.toUnsignedInt(b0), Byte.toUnsignedInt(b1), lerp);
-		int rn = (rl & 0xFFFFFF) << 24;
-		int gn = (gl & 0xFFFFFF) << 16;
-		int bn = (bl & 0xFFFFFF) << 8;
-		return (rn + gn + bn);
-		//return (int)Math.round(r0 * lerp);
+		switch (ledMode) {
+			case Backlit: {
+				return colourStart;
+			}
+			case ReactiveBacklit: {
+				// This could probably be optimised quite heavily.
+				float lerp = keyColours[keyx][keyy];
+				byte r0 = (byte)((colourStart >> 24) & 0xFF);
+				byte g0 = (byte)((colourStart >> 16) & 0xFF);
+				byte b0 = (byte)((colourStart >> 8) & 0xFF);
+				byte r1 = (byte)((colourEnd >> 24) & 0xFF);
+				byte g1 = (byte)((colourEnd >> 16) & 0xFF);
+				byte b1 = (byte)((colourEnd >> 8) & 0xFF);
+				byte rl = (byte)Utils.lerp(Byte.toUnsignedInt(r0), Byte.toUnsignedInt(r1), lerp);
+				byte gl = (byte)Utils.lerp(Byte.toUnsignedInt(g0), Byte.toUnsignedInt(g1), lerp);
+				byte bl = (byte)Utils.lerp(Byte.toUnsignedInt(b0), Byte.toUnsignedInt(b1), lerp);
+				int rn = (rl & 0xFFFFFF) << 24;
+				int gn = (gl & 0xFFFFFF) << 16;
+				int bn = (bl & 0xFFFFFF) << 8;
+				return (rn + gn + bn);
+			}
+			
+			default: {
+				return colourStart;
+			}
+		}
 	}
 
 	// This functions can be optimised alot. Just don't do it in a for-loop. This is temporary...
@@ -258,6 +325,7 @@ public class MainClass implements NativeKeyListener
 		
 		int keycode = arg0.getKeyCode();
 		setKeyLerpValueFromKeymap(keycode, 1.0f);
+		update = true;
 	}
 
 	// May do a slow-lerp to 0
@@ -265,6 +333,7 @@ public class MainClass implements NativeKeyListener
 	public void nativeKeyReleased(NativeKeyEvent arg0) { 
 		int keycode = arg0.getKeyCode();
 		setKeyLerpValueFromKeymap(keycode, 0.0f);
+		update = true;
 	}
 
 	@Override
