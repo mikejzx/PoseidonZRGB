@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -22,6 +23,9 @@ public class GUIManager {
 	public static final String COMBOTYPE_STR_REACTIVEBACKLIT = "Reactive + Backlight";
 	public static final String COMBOTYPE_STR_RAIN = "Rain";
 	public static final String COMBOTYPE_STR_RAND= "Random Dots";
+	
+	public static JButton buttonColour1, buttonColour2;
+	public static JCheckBox checkCapsStay;
 	
 	public void initialise() {
 		System.out.println("GUIManage initialise.");
@@ -62,8 +66,12 @@ public class GUIManager {
 		frame.getContentPane().add(panel);
 		
 		// Button
-		JButton button1 = new JButton("Button 1");
-		panel.add(button1);
+		buttonColour1 = new JButton("Set Primary Colour");
+		buttonColour2 = new JButton("Set Secondary Colour");
+		buttonColour1.addActionListener(frame);
+		buttonColour2.addActionListener(frame);
+		panel.add(buttonColour1);
+		panel.add(buttonColour2);
 
 		// Dropdown
 		combo = new JComboBox<String>();
@@ -74,6 +82,12 @@ public class GUIManager {
 		combo.addItemListener(frame);
 		combo.setSelectedIndex(1);
 		panel.add(combo);
+		
+		// Checkbox
+		checkCapsStay = new JCheckBox("Caps-Lock shows it's status");
+		//checkCapsStay.addActionListener(frame);
+		checkCapsStay.addItemListener(frame);
+		panel.add(checkCapsStay);
 		
 		JLabel creditLabel = new JLabel ("Michael's Poseidon Z RGB Controller");
 		JLabel versionLabel = new JLabel("Version: " + MainClass.SOFTWARE_VERSION);

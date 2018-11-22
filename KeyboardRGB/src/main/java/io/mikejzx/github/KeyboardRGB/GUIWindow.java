@@ -1,5 +1,6 @@
 package io.mikejzx.github.KeyboardRGB;
 
+import java.awt.Color;
 import java.awt.ItemSelectable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,6 +10,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -63,6 +65,24 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 			this.dispose();
 			//MainClass.kill();
 		}
+		else if (src == GUIManager.buttonColour1) {
+			Color newColour = JColorChooser.showDialog(null, "Change the primary colour.", Utils.toRGB(MainClass.colour1));
+			if (newColour != null) {
+				MainClass.colour1 = Utils.toHex(newColour);
+				//System.out.print("COLOUR: " + newColour.getRed() + ", " + newColour.getGreen() + ", " + newColour.getBlue());
+				//System.out.println("HEX: " + Utils.hex(Utils.toHex(newColour)));
+				MainClass.setAllKeyLerpsZero();
+				MainClass.refreshLEDs();
+			}
+		}
+		else if (src == GUIManager.buttonColour2) {
+			Color newColour = JColorChooser.showDialog(null, "Change the primary colour.", Utils.toRGB(MainClass.colour2));
+			if (newColour != null) {
+				MainClass.colour2 = Utils.toHex(newColour);
+				MainClass.setAllKeyLerpsZero();
+				MainClass.refreshLEDs();
+			}
+		}
 	}
 	@Override
 	public void itemStateChanged(ItemEvent a) { 
@@ -98,6 +118,14 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 			}
 			System.out.println("Changed mode to " + str);
 			MainClass.setLEDMode(mode);
+		}
+		if (item == GUIManager.checkCapsStay) {
+			if (a.getStateChange() == ItemEvent.SELECTED) {
+				MainClass.capsLockStays = true;
+			}
+			else {
+				MainClass.capsLockStays = false;
+			}
 		}
 	}
 }

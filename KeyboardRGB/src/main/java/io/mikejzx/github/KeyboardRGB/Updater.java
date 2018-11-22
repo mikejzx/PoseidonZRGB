@@ -15,6 +15,7 @@ public class Updater {
 	
 	public void checkForSoftwareUpdate () {
 		try {
+			// This link doesn't yet exist. So don't bother trying to run this function.
 			URL url = new URL("https://mikejzx.github.io/Files/keyboardrgb_version.txt");
 			Scanner scan = new Scanner(url.openStream());
 			System.out.println("Latest version: " + scan.next());
