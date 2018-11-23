@@ -5,13 +5,15 @@ import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 
+import org.hid4java.HidDevice;
+import org.hid4java.HidManager;
+import org.hid4java.HidServices;
+import org.hid4java.HidServicesListener;
+import org.hid4java.HidServicesSpecification;
+import org.hid4java.ScanMode;
+import org.hid4java.event.HidServicesEvent;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
-
-import com.codeminders.hidapi.ClassPathLibraryLoader;
-import com.codeminders.hidapi.HIDDevice;
-import com.codeminders.hidapi.HIDDeviceInfo;
-import com.codeminders.hidapi.HIDManager;
 
 /*
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -40,9 +42,9 @@ import com.codeminders.hidapi.HIDManager;
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 */
 
-public class MainClass implements NativeKeyListener
+public class MainClass implements NativeKeyListener, HidServicesListener
 {
-	public static String SOFTWARE_VERSION = "0.0.1_07-SNAPSHOT(alpha)";
+	public static String SOFTWARE_VERSION = "0.0.2_01-SNAPSHOT(alpha)";
 	
 	public static boolean kill = false;
 	public static void kill() { kill = true; }
@@ -50,7 +52,6 @@ public class MainClass implements NativeKeyListener
 	
 	private static final short VENDOR_ID = 0x264a;
 	private static final short PRODUCT_ID = 0x3006;
-	private static final int DEVICE_INTERFACE = 1;
 	private static final int PACKET_SIZE = 264;
 	
 	private static final byte POSEIDON_START = 0x07;
@@ -107,11 +108,9 @@ public class MainClass implements NativeKeyListener
 	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
 	// TURN THIS OFF IN FINAL BUILDS.
 	private boolean RUN_WITHOUT_DEVICE = false;
-	
-	private static HIDManager manager;
-	
 	public static boolean capsLockStays = false;
-
+	private static HidServices services;
+	
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		MainClass k = new MainClass();
@@ -155,49 +154,50 @@ public class MainClass implements NativeKeyListener
 			}
 		}
 		
-		// Load HID library.
-        ClassPathLibraryLoader.loadNativeHIDLibrary();
-		manager = HIDManager.getInstance();
-		HIDDevice device = null;
+		HidServicesSpecification hidServiceSpecs = new HidServicesSpecification();
+    	hidServiceSpecs.setAutoShutdown(true);
+    	hidServiceSpecs.setScanInterval(500);
+    	hidServiceSpecs.setPauseInterval(500);
+    	hidServiceSpecs.setScanMode(ScanMode.SCAN_AT_FIXED_INTERVAL_WITH_PAUSE_AFTER_WRITE);
+    	services = HidManager.getHidServices(hidServiceSpecs);
+    	services.addHidServicesListener(this);
+    	System.out.println("HID services Now Starting...");
+    	services.start();
+    	HidDevice device = null;
+    	
 		if (!RUN_WITHOUT_DEVICE) {
 			// Iterate througheach device, and find the keyboard.
 			device = getDevice();
 		}
 		
 		if (device != null || RUN_WITHOUT_DEVICE) {
-			// This makes the device recieve packet immediately.
-			device.disableBlocking();
-			//device.enableBlocking();
-			
 			// Main loop
 			mainLoop(device);
+			device.close();
 		}
 		else {
 			System.err.println("DEVICE IS NULL");
 		}
-		manager.release();
+		services.shutdown();
 		System.out.println("Applcation termination...");
 	}
 	
-	private HIDDevice getDevice () throws IOException {
-		HIDDevice dev = null;
-		HIDDeviceInfo[] devices = manager.listDevices();
-		for (int i = 0; i < devices.length; i++) {
-			HIDDeviceInfo d = devices[i];
-			if (d.getInterface_number() == DEVICE_INTERFACE &&
-				d.getProduct_id() == PRODUCT_ID && d.getVendor_id() == VENDOR_ID) {
-				dev = d.open();
-				if (dev == null) { continue; }
-				else { 
-					System.out.println("Found device... breaking");
-					break; 
-				}
-			}
-		}
-		return dev;
+	private HidDevice getDevice () throws IOException {
+		HidDevice hidDevice = null;
+    	for (HidDevice device : services.getAttachedHidDevices()) {
+    		System.out.println(device);
+    		if (device.getVendorId() == VENDOR_ID && device.getProductId() == PRODUCT_ID) {
+    			boolean open = device.open();
+    			System.err.println(open);
+    			if (open) { 
+    				hidDevice = device; 
+    			}
+    		}
+    	}
+    	return hidDevice;
 	}
 	
-	private void mainLoop (HIDDevice device) throws InterruptedException {
+	private void mainLoop (HidDevice device) throws InterruptedException {
 		while (kill ^ true) {
 			switch (ledMode) {
 				case Backlit: {
@@ -245,7 +245,7 @@ public class MainClass implements NativeKeyListener
 		}
 	}
 	
-	private void setLEDs (HIDDevice device) {
+	private void setLEDs (HidDevice device) {
 		if (RUN_WITHOUT_DEVICE || device == null) {
 			return;
 		}
@@ -253,13 +253,13 @@ public class MainClass implements NativeKeyListener
     	byte[] bufferRG = new byte[PACKET_SIZE];
     	byte[] bufferB = new byte[PACKET_SIZE];
     	for (int i = 0; i < PACKET_SIZE; i++) { bufferRG[i] = (byte)0x00; bufferB[i] = (byte)0x00; }
-    	bufferRG[0] = POSEIDON_START; bufferRG[1] = POSEIDON_LEDCMD; bufferRG[2] = POSEIDON_PROFILE; bufferRG[3] = POSEIDON_CHANNEL_REDGRN;
-    	bufferB[0] = POSEIDON_START; bufferB[1] = POSEIDON_LEDCMD; bufferB[2] = POSEIDON_PROFILE; bufferB[3] = POSEIDON_CHANNEL_BLU;
+    	bufferRG[0] = POSEIDON_LEDCMD; bufferRG[1] = POSEIDON_PROFILE; bufferRG[2] = POSEIDON_CHANNEL_REDGRN;
+    	bufferB[0] = POSEIDON_LEDCMD; bufferB[1] = POSEIDON_PROFILE; bufferB[2] = POSEIDON_CHANNEL_BLU;
     	// Assign colour bytes.
     	for (int x = 0; x < POSEIDON_KEYSX; x++) {
     		for (int y = 0; y < POSEIDON_KEYSY; y++) {
-    			int index = keyMap[y][x];
-    			if (index != 0) {
+    			int index = keyMap[y][x] - 1;
+    			if (index > 0) {
     				int colour = getColourAtKey(x, y);
     				bufferRG[index] = (byte)((colour >> 24) & 0xFF);
     				bufferRG[index + 128] = (byte)((colour >> 16) & 0xFF);
@@ -269,16 +269,16 @@ public class MainClass implements NativeKeyListener
     	}
     	
     	// Send packets
-		try { 
-			device.sendFeatureReport(bufferRG);
+		try {
+			// Send RED-GRN buffer
+			int valRG = device.sendFeatureReport(bufferRG, (byte)POSEIDON_START);
+			if (valRG < 0) { System.err.println("ERROR[RG]: " + device.getLastErrorMessage()); }
+			
 			Thread.sleep(10); // Was 1, set to 10 to prevent weird colour thing,
-			device.sendFeatureReport(bufferB);
-		} 
-		catch (IOException e) {
-			// Device might've closed automatically. re-open it.
-			try { device = getDevice(); } 
-			catch (IOException e1) { e1.printStackTrace(); }
-			e.printStackTrace(); 
+			
+			// Send BLU buffer
+			int valB = device.sendFeatureReport(bufferB, (byte)POSEIDON_START);
+	    	if (valB < 0) { System.err.println("ERROR[RG]: " + device.getLastErrorMessage()); }
 		}
 		catch (InterruptedException e) { e.printStackTrace(); }
 	}
@@ -302,15 +302,12 @@ public class MainClass implements NativeKeyListener
 				byte r0 = (byte)((colour1 >> 24) & 0xFF);
 				byte g0 = (byte)((colour1 >> 16) & 0xFF);
 				byte b0 = (byte)((colour1 >> 8) & 0xFF);
-				//System.out.println("r0: " + Utils.hex(r0) + ", g0: " + Utils.hex(g0) + ", b0: " + Utils.hex(b0));
 				byte r1 = (byte)((colour2 >> 24) & 0xFF);
 				byte g1 = (byte)((colour2 >> 16) & 0xFF);
 				byte b1 = (byte)((colour2 >> 8) & 0xFF);
-				//System.out.println("r1: " + Utils.hex(r1) + ", g1: " + Utils.hex(g1) + ", b1: " + Utils.hex(b1));
 				byte rl = (byte)Utils.lerp(Byte.toUnsignedInt(r0), Byte.toUnsignedInt(r1), lerp);
 				byte gl = (byte)Utils.lerp(Byte.toUnsignedInt(g0), Byte.toUnsignedInt(g1), lerp);
 				byte bl = (byte)Utils.lerp(Byte.toUnsignedInt(b0), Byte.toUnsignedInt(b1), lerp);
-				//System.out.println("rl: " + Utils.hex(rl) + ", gl: " + Utils.hex(gl) + ", bl: " + Utils.hex(bl));
 				
 				// The last mask on the end is required because for some reason the blue buffer was getting values
 				// greater than 8-bits o_O
@@ -396,4 +393,16 @@ public class MainClass implements NativeKeyListener
 
 	@Override
 	public void nativeKeyTyped(NativeKeyEvent arg0) { }
+	
+	 public void hidDeviceDetached(HidServicesEvent event) {
+    	System.err.println("Device detached: " + event);
+    }
+
+    public void hidFailure(HidServicesEvent event) {
+    	System.err.println("HID failure: " + event);
+    }
+    
+    public void hidDeviceAttached(HidServicesEvent event) {
+    	System.err.println("Device attached: " + event);
+    }
 }
