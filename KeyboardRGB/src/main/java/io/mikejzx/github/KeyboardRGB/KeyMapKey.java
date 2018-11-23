@@ -1,8 +1,5 @@
 package io.mikejzx.github.KeyboardRGB;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /*
  * Only keys that use this class are keys that have multiple variations,
  * e.g: LSHIFT and RSHIFT.

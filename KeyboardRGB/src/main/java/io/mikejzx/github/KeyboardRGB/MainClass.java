@@ -4,8 +4,6 @@ package io.mikejzx.github.KeyboardRGB;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
@@ -42,6 +40,10 @@ import org.jnativehook.keyboard.NativeKeyListener;
 	* 'Rain' (Vertical wave)
 	* Random keys that change to random values slowly.
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+	Use this for icon of .exe wrapper:
+	E:\Programs\Tt eSPORTS POSEIDON Z RGB\POSEIDON Z RGB.exe
+	(Will extract it eventually)
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 */
 
 public class MainClass implements NativeKeyListener, HidServicesListener
@@ -75,25 +77,50 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	};
 	
 	private static final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
-	// Not yet compelte. Just for testing. For some reason windows has differnet keycodes... Can also be a bit cleaner...
+	// Could be a bit cleaner...
 	private static final int[][] keyMapKeycodes = {
 		{ NativeKeyEvent.VC_ESCAPE, 0, NativeKeyEvent.VC_F1, NativeKeyEvent.VC_F2, NativeKeyEvent.VC_F3,  NativeKeyEvent.VC_F4, 0, NativeKeyEvent.VC_F5,  NativeKeyEvent.VC_F6, NativeKeyEvent.VC_F7, NativeKeyEvent.VC_F8, 0, NativeKeyEvent.VC_F9, NativeKeyEvent.VC_F10, NativeKeyEvent.VC_F11, NativeKeyEvent.VC_F12, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.VC_SCROLL_LOCK, NativeKeyEvent.VC_PAUSE },
-		{ 41, NativeKeyEvent.VC_1,  NativeKeyEvent.VC_2, NativeKeyEvent.VC_3,  NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, NativeKeyEvent.VC_0, 0, 12, 13, NativeKeyEvent.VC_BACKSPACE, 0,  NativeKeyEvent.VC_INSERT,  NativeKeyEvent.VC_HOME,  NativeKeyEvent.VC_PAGE_UP,  VC_NUMLOCK, VC_DIV, VC_MUL, VC_MINUS },
+		{ 41, NativeKeyEvent.VC_1,  NativeKeyEvent.VC_2, NativeKeyEvent.VC_3, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, NativeKeyEvent.VC_0, 0, 12, 13, NativeKeyEvent.VC_BACKSPACE, 0,  NativeKeyEvent.VC_INSERT,  NativeKeyEvent.VC_HOME,  NativeKeyEvent.VC_PAGE_UP,  VC_NUMLOCK, VC_DIV, VC_MUL, VC_MINUS },
 		{ NativeKeyEvent.VC_TAB, 0, NativeKeyEvent.VC_Q,NativeKeyEvent.VC_W, NativeKeyEvent.VC_E, NativeKeyEvent.VC_R, NativeKeyEvent.VC_R, NativeKeyEvent.VC_T, NativeKeyEvent.VC_Y, NativeKeyEvent.VC_U, NativeKeyEvent.VC_I, NativeKeyEvent.VC_O, NativeKeyEvent.VC_P, NativeKeyEvent.VC_OPEN_BRACKET, NativeKeyEvent.VC_CLOSE_BRACKET, VC_PIPE, NativeKeyEvent.VC_DELETE, NativeKeyEvent.VC_END, NativeKeyEvent.VC_PAGE_DOWN, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, VC_ADD },
 		{ NativeKeyEvent.VC_CAPS_LOCK, 0, NativeKeyEvent.VC_A, NativeKeyEvent.VC_S, NativeKeyEvent.VC_D, NativeKeyEvent.VC_F, 0, NativeKeyEvent.VC_G, NativeKeyEvent.VC_H, NativeKeyEvent.VC_J, NativeKeyEvent.VC_K, NativeKeyEvent.VC_L, NativeKeyEvent.VC_SEMICOLON, NativeKeyEvent.VC_QUOTE, NativeKeyEvent.VC_ENTER, 0, 0, 0, 0, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6 },
 		{ NativeKeyEvent.VC_SHIFT, 0, NativeKeyEvent.VC_Z, NativeKeyEvent.VC_X, NativeKeyEvent.VC_C, NativeKeyEvent.VC_V, 0, NativeKeyEvent.VC_B, 0, NativeKeyEvent.VC_N, NativeKeyEvent.VC_M, NativeKeyEvent.VC_COMMA, NativeKeyEvent.VC_PERIOD, VC_QMARK, VC_RSHIFT, 0, 0, NativeKeyEvent.VC_UP, 0, NativeKeyEvent.VC_1, NativeKeyEvent.VC_2, NativeKeyEvent.VC_3 },
 		{ NativeKeyEvent.VC_CONTROL, VC_SUPER, NativeKeyEvent.VC_ALT, 0, 0, 0, 0, NativeKeyEvent.VC_SPACE, 0, 0, 0, 0, NativeKeyEvent.VC_ALT, 0, NativeKeyEvent.VC_CONTEXT_MENU, NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT, NativeKeyEvent.VC_DOWN, NativeKeyEvent.VC_RIGHT, NativeKeyEvent.VC_0, 0, VC_FULLSTOP, NativeKeyEvent.VC_ENTER },
 	};
 	
-	// Used for keys that exist multiple times on keyboard, e.g: lctrl & rctrl.
+	// Used for keys that exist multiple times on keyboard, e.g: lctrl & rctrl. These are all hard-coded. So they are unfortunately neither very manipulable nor developer-friendly.
 	private static final KeyMapKey[] keysVariational = new KeyMapKey[] {
 		// Ctrl keys
-		new KeyMapKey(NativeKeyEvent.VC_CONTROL, new KeyVariant[] {
-			new KeyVariant(0, 5, 2, "lctrl"), // LCTRL
-			new KeyVariant(15, 5, 3, "rctrl"), // RCTRL
-		}),
+		new KeyMapKey(NativeKeyEvent.VC_CONTROL, new KeyVariant[] { new KeyVariant(0, 5, 2, "lctrl"), new KeyVariant(15, 5, 3, "rctrl"), }),
+		// Alt keys
+		new KeyMapKey(NativeKeyEvent.VC_ALT, new KeyVariant[] { new KeyVariant(2, 5, 2, "lalt"), new KeyVariant(12, 5, 3, "ralt"), }),
+		// Return keys
+		new KeyMapKey(NativeKeyEvent.VC_ENTER, new KeyVariant[] { new KeyVariant(14, 3, 1, "entermain"), new KeyVariant(22, 4, 4, "enternumpad"), }),
+		// Slash
+		new KeyMapKey(NativeKeyEvent.VC_SLASH, new KeyVariant[] { new KeyVariant(13, 4, 1, "slashmain"), new KeyVariant(20, 1, 4, "slashnumpad"), }),
+		// PrtScrSysRq & Num-pad multiply. (Both use same key code.)
+		new KeyMapKey(NativeKeyEvent.VC_PRINTSCREEN, new KeyVariant[] { new KeyVariant(16, 0, 1, "prtscrsysreq"), new KeyVariant(21, 1, 4, "mul"), }),
+		// 0 - Zero
+		new KeyMapKey(NativeKeyEvent.VC_0, new KeyVariant[] { new KeyVariant(10, 1, 1, "top_zero"), new KeyVariant(19, 5, 4, "zeronumpad"), }),
+		// 1
+		new KeyMapKey(NativeKeyEvent.VC_1, new KeyVariant[] { new KeyVariant(1, 1, 1, "top_1"), new KeyVariant(19, 4, 4, "num_1"), }),
+		// 2
+		new KeyMapKey(NativeKeyEvent.VC_2, new KeyVariant[] { new KeyVariant(2, 1, 1, "top_2"), new KeyVariant(20, 4, 4, "num_2"), }),
+		// 3
+		new KeyMapKey(NativeKeyEvent.VC_3, new KeyVariant[] { new KeyVariant(3, 1, 1, "top_3"), new KeyVariant(21, 4, 4, "num_3"), }),
+		// 4
+		new KeyMapKey(NativeKeyEvent.VC_4, new KeyVariant[] { new KeyVariant(4, 1, 1, "top_4"), new KeyVariant(19, 3, 4, "num_4"), }),
+		// 5
+		new KeyMapKey(NativeKeyEvent.VC_5, new KeyVariant[] { new KeyVariant(5, 1, 1, "top_5"), new KeyVariant(20, 3, 4, "num_5"), }),
+		// 6
+		new KeyMapKey(NativeKeyEvent.VC_6, new KeyVariant[] { new KeyVariant(6, 1, 1, "top_6"), new KeyVariant(21, 3, 4, "num_6"), }),
+		// 7
+		new KeyMapKey(NativeKeyEvent.VC_7, new KeyVariant[] { new KeyVariant(7, 1, 1, "top_7"), new KeyVariant(19, 2, 4, "num_7"), }),
+		// 8
+		new KeyMapKey(NativeKeyEvent.VC_8, new KeyVariant[] { new KeyVariant(8, 1, 1, "top_8"), new KeyVariant(20, 2, 4, "num_8"), }),
+		// 9
+		new KeyMapKey(NativeKeyEvent.VC_9, new KeyVariant[] { new KeyVariant(9, 1, 1, "top_9"), new KeyVariant(21, 2, 4, "num_9"), }),
 	};
-	
+
 	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
 	private static float[][] keyColours;
 	
@@ -102,8 +129,8 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	
 	// These 32-bit integers represent the hex colour codes.
 	// First 3 bytes are RGB colours respectively. Last byte is unused.
-	public static int colour1 = 0xFF220000; //0x4411110;
-	public static int colour2 = 0xFFFF0000; //0xFF002200;
+	public static int colour1 = 0x88118800; //0xFF220000; //0x4411110;
+	public static int colour2 = 0x00FF8800; //0xFFFF0000; //0xFF002200;
 	
 	private static GUIManager gui;
 	private static boolean initialised = false;
@@ -117,7 +144,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	
 	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
 	// TURN THIS OFF IN FINAL BUILDS.
-	private boolean RUN_WITHOUT_DEVICE = true;
+	private boolean RUN_WITHOUT_DEVICE = false;
 	public static boolean capsLockStays = false;
 	private static HidServices services;
 	
@@ -169,8 +196,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		}
 		
 		initialised = true;
-		
-		if (true) { return; }
 		
 		HidServicesSpecification hidServiceSpecs = new HidServicesSpecification();
     	hidServiceSpecs.setAutoShutdown(true);
@@ -264,7 +289,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	}
 	
 	private void setLEDs (HidDevice device) {
-		if (RUN_WITHOUT_DEVICE || device == null) {
+		if (RUN_WITHOUT_DEVICE || device == null || kill) {
 			return;
 		}
 		// Initialise packets.
@@ -408,7 +433,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		//System.out.println(arg0.getRawCode());
 		//System.out.println(arg0.getKeyCode());
 		
-		System.out.print("location: " + arg0.getKeyLocation());
+		//System.out.print("location: " + arg0.getKeyLocation());
 		int keycode = arg0.getKeyCode();
 		if (ledMode == LEDMode.ReactiveBacklit) {
 			setKeyLerpValueFromKeymap(keycode, 1.0f, arg0.getKeyLocation());

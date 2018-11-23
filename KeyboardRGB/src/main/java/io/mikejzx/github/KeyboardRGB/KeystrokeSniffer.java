@@ -11,7 +11,11 @@ import org.jnativehook.keyboard.NativeKeyListener;
 
 /*
 	Used to capture keystrokes to change LED's.
-	'Sniffer' is probably the wrong name for this xD
+	'Sniffer' is probably the wrong name for this idk xD
+	
+	|\__/|
+	|-__-| *sniff* *sniff* *sniff*
+	|_==_|
  */
 
 public class KeystrokeSniffer implements NativeKeyListener {
