@@ -13,4 +13,4 @@ Currently the project is completely in development, and may contain bugs. Please
 
 # Features of this program
 * *Smooth*, **classy**, _default_ Java user-interface. This helps deter any Microsoft 'Metro' fanboys who think 'minimalism' is the way to go.<br>
-* **2 Lighting Modes** are currently supported! 'Backlit', and 'Backlit+Reactive'! This enormous number will be made even larger int future!
+* **2 Lighting Modes** are currently supported! 'Backlit', and 'Backlit+Reactive'! This enormous number will be made even larger int the future!
