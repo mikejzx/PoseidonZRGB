@@ -4,6 +4,8 @@ package io.mikejzx.github.KeyboardRGB;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
@@ -44,7 +46,7 @@ import org.jnativehook.keyboard.NativeKeyListener;
 
 public class MainClass implements NativeKeyListener, HidServicesListener
 {
-	public static String SOFTWARE_VERSION = "0.0.2_01-SNAPSHOT(alpha)";
+	public static String SOFTWARE_VERSION = "0.0.2_02-SNAPSHOT(alpha)";
 	
 	public static boolean kill = false;
 	public static void kill() { kill = true; }
@@ -72,18 +74,25 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
 	
+	private static final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
 	// Not yet compelte. Just for testing. For some reason windows has differnet keycodes... Can also be a bit cleaner...
-	/*private static final int[][] keyMapKeycodes = {
-	//   ESC  NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
-		{  1,   0,   59, 60,  61,  62,   0,  63,  64,  65,  66,   0,  67, 68,  87,  88, 3639,  70, 3653,   0,   0,   0,   0 },
-		//tilde 1    2    3    4    5    6    7    8   9     0 null   -    +  back      ins  home  pgup num  div   mul  -
-		{ 41,   2,   3,   4,   5,   6,   7,   8,   9,  10,   11, 0,  12,  13,   14, 0, 3666,3655, 3657, 69,   53, 3639, 3658 },
-		//tab NULL  q    w    e    r NULL, t    z    U    I    o    p   [    ]    \   del  end  pgdn  7nu  8nu  9nu plus
-		{ 15,   0,  16,  17,  18,  19,  0, 20,  21,  22,  23,  24,  25, 26,  27,  43, 3667,3663,3665, 3655, 57416, 3657 },
-		
-		//{ 27, 0,  112, 113, 114,115,   0, 116, 117, 118, 119,   0, 120, 121, 122, 123,  44, 145,  19,   0,   0,   0,   0 },
-	};*/
-	private static int[][] keyMapKeycodes;
+	private static final int[][] keyMapKeycodes = {
+		{ NativeKeyEvent.VC_ESCAPE, 0, NativeKeyEvent.VC_F1, NativeKeyEvent.VC_F2, NativeKeyEvent.VC_F3,  NativeKeyEvent.VC_F4, 0, NativeKeyEvent.VC_F5,  NativeKeyEvent.VC_F6, NativeKeyEvent.VC_F7, NativeKeyEvent.VC_F8, 0, NativeKeyEvent.VC_F9, NativeKeyEvent.VC_F10, NativeKeyEvent.VC_F11, NativeKeyEvent.VC_F12, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.VC_SCROLL_LOCK, NativeKeyEvent.VC_PAUSE },
+		{ 41, NativeKeyEvent.VC_1,  NativeKeyEvent.VC_2, NativeKeyEvent.VC_3,  NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, NativeKeyEvent.VC_0, 0, 12, 13, NativeKeyEvent.VC_BACKSPACE, 0,  NativeKeyEvent.VC_INSERT,  NativeKeyEvent.VC_HOME,  NativeKeyEvent.VC_PAGE_UP,  VC_NUMLOCK, VC_DIV, VC_MUL, VC_MINUS },
+		{ NativeKeyEvent.VC_TAB, 0, NativeKeyEvent.VC_Q,NativeKeyEvent.VC_W, NativeKeyEvent.VC_E, NativeKeyEvent.VC_R, NativeKeyEvent.VC_R, NativeKeyEvent.VC_T, NativeKeyEvent.VC_Y, NativeKeyEvent.VC_U, NativeKeyEvent.VC_I, NativeKeyEvent.VC_O, NativeKeyEvent.VC_P, NativeKeyEvent.VC_OPEN_BRACKET, NativeKeyEvent.VC_CLOSE_BRACKET, VC_PIPE, NativeKeyEvent.VC_DELETE, NativeKeyEvent.VC_END, NativeKeyEvent.VC_PAGE_DOWN, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, VC_ADD },
+		{ NativeKeyEvent.VC_CAPS_LOCK, 0, NativeKeyEvent.VC_A, NativeKeyEvent.VC_S, NativeKeyEvent.VC_D, NativeKeyEvent.VC_F, 0, NativeKeyEvent.VC_G, NativeKeyEvent.VC_H, NativeKeyEvent.VC_J, NativeKeyEvent.VC_K, NativeKeyEvent.VC_L, NativeKeyEvent.VC_SEMICOLON, NativeKeyEvent.VC_QUOTE, NativeKeyEvent.VC_ENTER, 0, 0, 0, 0, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6 },
+		{ NativeKeyEvent.VC_SHIFT, 0, NativeKeyEvent.VC_Z, NativeKeyEvent.VC_X, NativeKeyEvent.VC_C, NativeKeyEvent.VC_V, 0, NativeKeyEvent.VC_B, 0, NativeKeyEvent.VC_N, NativeKeyEvent.VC_M, NativeKeyEvent.VC_COMMA, NativeKeyEvent.VC_PERIOD, VC_QMARK, VC_RSHIFT, 0, 0, NativeKeyEvent.VC_UP, 0, NativeKeyEvent.VC_1, NativeKeyEvent.VC_2, NativeKeyEvent.VC_3 },
+		{ NativeKeyEvent.VC_CONTROL, VC_SUPER, NativeKeyEvent.VC_ALT, 0, 0, 0, 0, NativeKeyEvent.VC_SPACE, 0, 0, 0, 0, NativeKeyEvent.VC_ALT, 0, NativeKeyEvent.VC_CONTEXT_MENU, NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT, NativeKeyEvent.VC_DOWN, NativeKeyEvent.VC_RIGHT, NativeKeyEvent.VC_0, 0, VC_FULLSTOP, NativeKeyEvent.VC_ENTER },
+	};
+	
+	// Used for keys that exist multiple times on keyboard, e.g: lctrl & rctrl.
+	private static final KeyMapKey[] keysVariational = new KeyMapKey[] {
+		// Ctrl keys
+		new KeyMapKey(NativeKeyEvent.VC_CONTROL, new KeyVariant[] {
+			new KeyVariant(0, 5, 2, "lctrl"), // LCTRL
+			new KeyVariant(15, 5, 3, "rctrl"), // RCTRL
+		}),
+	};
 	
 	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
 	private static float[][] keyColours;
@@ -97,6 +106,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	public static int colour2 = 0xFFFF0000; //0xFF002200;
 	
 	private static GUIManager gui;
+	private static boolean initialised = false;
 	
 	public static enum LEDMode {
 		Backlit, ReactiveBacklit, Rain, Random
@@ -107,7 +117,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	
 	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
 	// TURN THIS OFF IN FINAL BUILDS.
-	private boolean RUN_WITHOUT_DEVICE = false;
+	private boolean RUN_WITHOUT_DEVICE = true;
 	public static boolean capsLockStays = false;
 	private static HidServices services;
 	
@@ -135,15 +145,19 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		keyColours = new float[POSEIDON_KEYSX][POSEIDON_KEYSY];
 		keysDropping = new boolean[POSEIDON_KEYSX][POSEIDON_KEYSY];
 		
-		final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
-		keyMapKeycodes = new int[][] {
-			{ NativeKeyEvent.VC_ESCAPE, 0, NativeKeyEvent.VC_F1, NativeKeyEvent.VC_F2, NativeKeyEvent.VC_F3,  NativeKeyEvent.VC_F4, 0, NativeKeyEvent.VC_F5,  NativeKeyEvent.VC_F6, NativeKeyEvent.VC_F7, NativeKeyEvent.VC_F8, 0, NativeKeyEvent.VC_F9, NativeKeyEvent.VC_F10, NativeKeyEvent.VC_F11, NativeKeyEvent.VC_F12, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.VC_SCROLL_LOCK, NativeKeyEvent.VC_PAUSE },
-			{ 41, NativeKeyEvent.VC_1,  NativeKeyEvent.VC_2, NativeKeyEvent.VC_3,  NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, NativeKeyEvent.VC_0, 0, 12, 13, NativeKeyEvent.VC_BACKSPACE, 0,  NativeKeyEvent.VC_INSERT,  NativeKeyEvent.VC_HOME,  NativeKeyEvent.VC_PAGE_UP,  VC_NUMLOCK, VC_DIV, VC_MUL, VC_MINUS },
-			{ NativeKeyEvent.VC_TAB, 0, NativeKeyEvent.VC_Q,NativeKeyEvent.VC_W, NativeKeyEvent.VC_E, NativeKeyEvent.VC_R, NativeKeyEvent.VC_R, NativeKeyEvent.VC_T, NativeKeyEvent.VC_Y, NativeKeyEvent.VC_U, NativeKeyEvent.VC_I, NativeKeyEvent.VC_O, NativeKeyEvent.VC_P, NativeKeyEvent.VC_OPEN_BRACKET, NativeKeyEvent.VC_CLOSE_BRACKET, VC_PIPE, NativeKeyEvent.VC_DELETE, NativeKeyEvent.VC_END, NativeKeyEvent.VC_PAGE_DOWN, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, VC_ADD },
-			{ NativeKeyEvent.VC_CAPS_LOCK, 0, NativeKeyEvent.VC_A, NativeKeyEvent.VC_S, NativeKeyEvent.VC_D, NativeKeyEvent.VC_F, 0, NativeKeyEvent.VC_G, NativeKeyEvent.VC_H, NativeKeyEvent.VC_J, NativeKeyEvent.VC_K, NativeKeyEvent.VC_L, NativeKeyEvent.VC_SEMICOLON, NativeKeyEvent.VC_QUOTE, NativeKeyEvent.VC_ENTER, 0, 0, 0, 0, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6 },
-			{ NativeKeyEvent.VC_SHIFT, 0, NativeKeyEvent.VC_Z, NativeKeyEvent.VC_X, NativeKeyEvent.VC_C, NativeKeyEvent.VC_V, 0, NativeKeyEvent.VC_B, 0, NativeKeyEvent.VC_N, NativeKeyEvent.VC_M, NativeKeyEvent.VC_COMMA, NativeKeyEvent.VC_PERIOD, VC_QMARK, VC_RSHIFT, 0, 0, NativeKeyEvent.VC_UP, 0, NativeKeyEvent.VC_1, NativeKeyEvent.VC_2, NativeKeyEvent.VC_3 },
-			{ NativeKeyEvent.VC_CONTROL, VC_SUPER, NativeKeyEvent.VC_ALT, 0, 0, 0, 0, NativeKeyEvent.VC_SPACE, 0, 0, 0, 0, NativeKeyEvent.VC_ALT, 0, NativeKeyEvent.VC_CONTEXT_MENU, NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT, NativeKeyEvent.VC_DOWN, NativeKeyEvent.VC_RIGHT, NativeKeyEvent.VC_0, 0, VC_FULLSTOP, NativeKeyEvent.VC_ENTER },
-		};
+		// Find variational keys
+		/*
+		List<Integer> l = new ArrayList<Integer>();
+		for (int y = 0; y < keyMapKeycodes.length; y++) {
+			for (int x = 0; x < keyMapKeycodes[y].length; x++) {
+				l.add(keyMapKeycodes[y][x]);
+			}
+		}
+		
+		int[] dupes = Utils.getDupes(l, 0);
+		for (int x = 0; x < dupes.length; x++) {
+			System.out.println("DUPE FOUND: " + dupes[x]);
+		}*/
 		
 		// May move argument handling into a seperate function
 		if (args.length > 0) { 
@@ -153,6 +167,10 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 				colour2 = Integer.parseInt(args[1]);
 			}
 		}
+		
+		initialised = true;
+		
+		if (true) { return; }
 		
 		HidServicesSpecification hidServiceSpecs = new HidServicesSpecification();
     	hidServiceSpecs.setAutoShutdown(true);
@@ -325,24 +343,57 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	}
 
 	// This functions can be optimised alot. Just don't do it in a for-loop. This is temporary...
-	private void setKeyLerpValueFromKeymap (int keycode, float newlerp) {
-		for (int y = 0; y < keyMapKeycodes.length; y++) {
-			for (int x = 0; x < keyMapKeycodes[y].length; x++) {
-				if (keycode == keyMapKeycodes[y][x]) {
-					if (newlerp == 0.0f) {
-						keysDropping[x][y] = true;
+	private void setKeyLerpValueFromKeymap (int keycode, float newlerp, int loc) {
+		boolean variationalKey = false;
+		KeyMapKey variational = null;
+		for (int i = 0; i < keysVariational.length; i++) {
+			variational = keysVariational[i];
+			if (keycode == variational.keycode) {
+				variationalKey = true;
+				break;
+			}
+		}
+		
+		if (!variationalKey) {
+			for (int y = 0; y < keyMapKeycodes.length; y++) {
+				for (int x = 0; x < keyMapKeycodes[y].length; x++) {
+					if (keycode == keyMapKeycodes[y][x]) {
+						if (newlerp == 0.0f) {
+							keysDropping[x][y] = true;
+						}
+						else {
+							keyColours[x][y] = newlerp;
+						}
+						break;
 					}
-					else {
-						keyColours[x][y] = newlerp;
-					}
+				}
+			}
+		}
+		else {
+			// Variational key. Set specific key.
+			int x = 0, y = 0;
+			KeyVariant[] variants = variational.variants;
+			for (int i = 0; i < variants.length; i++) {
+				KeyVariant v = variants[i];
+				if (v.loc == loc) {
+					x = v.x;
+					y = v.y;
+					//System.out.println("KEY: " + v.brief);
 					break;
 				}
+			}
+			
+			if (newlerp == 0.0f) {
+				keysDropping[x][y] = true;
+			}
+			else {
+				keyColours[x][y] = newlerp;
 			}
 		}
 	}
 	
 	public static void setAllKeyLerpsZero () {
-		if (keyMapKeycodes == null || keyMapKeycodes.length == 0) { return; }
+		if (!initialised) { return; }
 		
 		for (int y = 0; y < keyMapKeycodes.length; y++) {
 			for (int x = 0; x < keyMapKeycodes[y].length; x++) {
@@ -357,9 +408,10 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		//System.out.println(arg0.getRawCode());
 		//System.out.println(arg0.getKeyCode());
 		
+		System.out.print("location: " + arg0.getKeyLocation());
 		int keycode = arg0.getKeyCode();
 		if (ledMode == LEDMode.ReactiveBacklit) {
-			setKeyLerpValueFromKeymap(keycode, 1.0f);
+			setKeyLerpValueFromKeymap(keycode, 1.0f, arg0.getKeyLocation());
 			update = true;
 		}
 	}
@@ -371,21 +423,21 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		if (capsLockStays) {
 			boolean capsOn = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
 			if (capsOn) {
-				setKeyLerpValueFromKeymap(NativeKeyEvent.VC_CAPS_LOCK, 1.0f);
+				setKeyLerpValueFromKeymap(NativeKeyEvent.VC_CAPS_LOCK, 1.0f, 1);
 				update = true;
 				//System.out.println("caps lock on");
 			}
 			else {
-				setKeyLerpValueFromKeymap(NativeKeyEvent.VC_CAPS_LOCK, 0.0f);
+				setKeyLerpValueFromKeymap(NativeKeyEvent.VC_CAPS_LOCK, 0.0f, 1);
 				update = true;
 				//System.out.println("caps lock off");
 			}
 		}
 		boolean allowSet = capsLockStays ? (keycode != NativeKeyEvent.VC_CAPS_LOCK) : true;
 		if (allowSet) {
-			setKeyLerpValueFromKeymap(keycode, 0.0f);
+			setKeyLerpValueFromKeymap(keycode, 0.0f, arg0.getKeyLocation());
 			if (ledMode == LEDMode.ReactiveBacklit) {
-				setKeyLerpValueFromKeymap(keycode, 1.0f);
+				setKeyLerpValueFromKeymap(keycode, 1.0f, arg0.getKeyLocation());
 				update = true;
 			}
 		}

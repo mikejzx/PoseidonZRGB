@@ -1,6 +1,10 @@
 package io.mikejzx.github.KeyboardRGB;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 // Nice utilities
 public final class Utils {
@@ -27,5 +31,51 @@ public final class Utils {
 		int g = ((c.getGreen() & 0xFFFFFF) << 16) & 0x00FF0000;
 		int b = ((c.getBlue() & 0xFFFFFF) << 8) & 0x0000FF00;
 		return r + g + b;
+	}
+	
+	public static int[] getDupes(int[] arr, int exclude) {
+		final Set<Integer> setToReturn = new HashSet<Integer>();
+		final Set<Integer> set1 = new HashSet<Integer>();
+		
+		List<Integer> l = new ArrayList<Integer>();
+		for (int i = 0; i < arr.length; i++) {
+			if (arr[i] != exclude) {
+				l.add(arr[i]);
+			}
+		}
+		for (Integer yourInt : l) {
+			if (!set1.add(yourInt)) {
+				setToReturn.add(yourInt);
+			}
+		}
+		final Object[] ret = setToReturn.toArray();
+		int[] fin = new int[ret.length];
+		for (int i = 0; i < fin.length; i++) {
+			fin[i] = (int)ret[i];
+		}
+		return fin;
+	}
+	
+	public static int[] getDupes(List<Integer> arr, int exclude) {
+		final Set<Integer> setToReturn = new HashSet<Integer>();
+		final Set<Integer> set1 = new HashSet<Integer>();
+		
+		List<Integer> l = new ArrayList<Integer>();
+		for (int i = 0; i < arr.size(); i++) {
+			if (arr.get(i) != exclude) {
+				l.add(arr.get(i));
+			}
+		}
+		for (Integer yourInt : l) {
+			if (!set1.add(yourInt)) {
+				setToReturn.add(yourInt);
+			}
+		}
+		final Object[] ret = setToReturn.toArray();
+		int[] fin = new int[ret.length];
+		for (int i = 0; i < fin.length; i++) {
+			fin[i] = (int)ret[i];
+		}
+		return fin;
 	}
 }
