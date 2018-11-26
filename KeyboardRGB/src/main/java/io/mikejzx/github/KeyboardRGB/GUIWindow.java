@@ -23,16 +23,28 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 	
 	private static final long serialVersionUID = 1L;
 	
-	private JMenuItem menuItemQuit;
+	private JMenuItem menuItemQuit, menuItemAbout, menuItemMinimise;
 	
 	public void initialiseMenus () {
 		JMenuBar menubar = new JMenuBar();
 		
 		// Create the file menu.
-		JMenu menuFile = new JMenu("File");
-		menuFile.setMnemonic(KeyEvent.VK_F);
+		JMenu menuFile = new JMenu("Goodies");
+		menuFile.setMnemonic(KeyEvent.VK_G);
 		menubar.add(menuFile);
 
+		menuItemMinimise = new JMenuItem("Minimise to Tray");
+		menuItemMinimise.addActionListener(this);
+		menuItemMinimise.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK));
+		menuItemMinimise.getAccessibleContext().setAccessibleDescription("Minimise the application to the system tray.");
+		menuFile.add(menuItemMinimise);
+		
+		menuItemAbout = new JMenuItem("About");
+		menuItemAbout.addActionListener(this);
+		menuFile.add(menuItemAbout);
+		
+		menuFile.addSeparator();
+		
 		menuItemQuit = new JMenuItem("Quit", KeyEvent.VK_Q);
 		menuItemQuit.addActionListener(this);
 		menuItemQuit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, ActionEvent.ALT_MASK));
@@ -72,6 +84,7 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 				//System.out.print("COLOUR: " + newColour.getRed() + ", " + newColour.getGreen() + ", " + newColour.getBlue());
 				//System.out.println("HEX: " + Utils.hex(Utils.toHex(newColour)));
 				MainClass.setAllKeyLerpsZero();
+				MainClass.refreshLEDColour();
 				MainClass.refreshLEDs();
 			}
 		}
@@ -80,8 +93,12 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 			if (newColour != null) {
 				MainClass.colour2 = Utils.toHex(newColour);
 				MainClass.setAllKeyLerpsZero();
+				MainClass.refreshLEDColour();
 				MainClass.refreshLEDs();
 			}
+		}
+		else if (src == menuItemMinimise) {
+			GUIManager.windowMinimise();
 		}
 	}
 	@Override
@@ -100,6 +117,14 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 				
 				case (GUIManager.COMBOTYPE_STR_REACTIVEBACKLIT): {
 					mode = LEDMode.ReactiveBacklit;
+				} break;
+				
+				case (GUIManager.COMBOTYPE_STR_WAVEH): {
+					mode = LEDMode.WaveH;
+				} break;
+				
+				case (GUIManager.COMBOTYPE_STR_WAVEV): {
+					mode = LEDMode.WaveV;
 				} break;
 				
 				case (GUIManager.COMBOTYPE_STR_RAIN): {
@@ -122,9 +147,11 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 		if (item == GUIManager.checkCapsStay) {
 			if (a.getStateChange() == ItemEvent.SELECTED) {
 				MainClass.capsLockStays = true;
+				PrefsManager.setPref_capsSustain(1);
 			}
 			else {
 				MainClass.capsLockStays = false;
+				PrefsManager.setPref_capsSustain(0);
 			}
 		}
 	}

@@ -1,9 +1,19 @@
 
 package io.mikejzx.github.KeyboardRGB;
 
+import java.awt.AWTException;
+import java.awt.Image;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
 import java.awt.Toolkit;
+import java.awt.TrayIcon;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
@@ -14,6 +24,12 @@ import org.hid4java.ScanMode;
 import org.hid4java.event.HidServicesEvent;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
+
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDController;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDListenableKeys;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDReactive;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveH;
 
 /*
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -48,23 +64,52 @@ import org.jnativehook.keyboard.NativeKeyListener;
 
 public class MainClass implements NativeKeyListener, HidServicesListener
 {
-	public static String SOFTWARE_VERSION = "0.0.2_02-SNAPSHOT(alpha)";
+	public static String SOFTWARE_VERSION = "0.0.2_04-SNAPSHOT(alpha)";
 	
 	public static boolean kill = false;
 	public static void kill() { kill = true; }
 	public static KeystrokeSniffer sniffer;
 	
-	private static final short VENDOR_ID = 0x264a;
-	private static final short PRODUCT_ID = 0x3006;
-	private static final int PACKET_SIZE = 264;
+	public static final short VENDOR_ID = 0x264a;
+	public static final short PRODUCT_ID = 0x3006;
+	public static final short PACKET_SIZE = 264;
+	public static final short POSEIDON_KEYSX = 23;
+	public static final short POSEIDON_KEYSY = 6;
 	
 	private static final byte POSEIDON_START = 0x07;
 	private static final byte POSEIDON_LEDCMD = 0x0E;
 	private static final byte POSEIDON_PROFILE = 0x01;
 	private static final byte POSEIDON_CHANNEL_REDGRN = 0x01;
 	private static final byte POSEIDON_CHANNEL_BLU = 0x02;
-	private static final short POSEIDON_KEYSX = 23;
-	private static final short POSEIDON_KEYSY = 6;
+
+	// These 32-bit integers represent the hex colour codes.
+	// First 3 bytes are RGB colours respectively. Last byte is empty & unused.
+	public static int colour1 = 0x88118800; //0xFF220000; //0x4411110;
+	public static int colour2 = 0x00FF8800; //0xFFFF0000; //0xFF002200;
+	
+	public static boolean initialised = false;
+	public static boolean capsLockStays = false;
+	public static boolean capsOn = false;
+	private static HidServices services;
+	private static GUIManager gui;
+	private static LEDMode ledMode = LEDMode.ReactiveBacklit;
+	private static boolean update = false;
+	private static MenuItem itemMin, itemShow;
+	private static HidDevice hidDevice;
+	private static ILEDController ledController;
+	private TrayIcon trayIcon;
+	
+	private static LEDBacklit ledContBacklit;
+	private static LEDReactive ledContReactive;
+	private static LEDWaveH ledContWaveH;
+	
+	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
+	// TURN THIS OFF IN FINAL BUILDS.
+	private boolean RUN_WITHOUT_DEVICE = false;
+	
+	public static enum LEDMode {
+		Backlit, ReactiveBacklit, Rain, Random, WaveH, WaveV
+	};
 	
 	private static final int[][] keyMap = {
 	//   ESC NULL F1   F2   F3   F4  NULL  F5   F6   F7   F8  NULL  F9  F10  F11  F12  PRT  SCR  PAU NULL NULL NULL NULL
@@ -76,9 +121,9 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
 	
-	private static final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
+	public static final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
 	// Could be a bit cleaner...
-	private static final int[][] keyMapKeycodes = {
+	public static final int[][] keyMapKeycodes = {
 		{ NativeKeyEvent.VC_ESCAPE, 0, NativeKeyEvent.VC_F1, NativeKeyEvent.VC_F2, NativeKeyEvent.VC_F3,  NativeKeyEvent.VC_F4, 0, NativeKeyEvent.VC_F5,  NativeKeyEvent.VC_F6, NativeKeyEvent.VC_F7, NativeKeyEvent.VC_F8, 0, NativeKeyEvent.VC_F9, NativeKeyEvent.VC_F10, NativeKeyEvent.VC_F11, NativeKeyEvent.VC_F12, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.VC_SCROLL_LOCK, NativeKeyEvent.VC_PAUSE },
 		{ 41, NativeKeyEvent.VC_1,  NativeKeyEvent.VC_2, NativeKeyEvent.VC_3, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, NativeKeyEvent.VC_0, 0, 12, 13, NativeKeyEvent.VC_BACKSPACE, 0,  NativeKeyEvent.VC_INSERT,  NativeKeyEvent.VC_HOME,  NativeKeyEvent.VC_PAGE_UP,  VC_NUMLOCK, VC_DIV, VC_MUL, VC_MINUS },
 		{ NativeKeyEvent.VC_TAB, 0, NativeKeyEvent.VC_Q,NativeKeyEvent.VC_W, NativeKeyEvent.VC_E, NativeKeyEvent.VC_R, NativeKeyEvent.VC_R, NativeKeyEvent.VC_T, NativeKeyEvent.VC_Y, NativeKeyEvent.VC_U, NativeKeyEvent.VC_I, NativeKeyEvent.VC_O, NativeKeyEvent.VC_P, NativeKeyEvent.VC_OPEN_BRACKET, NativeKeyEvent.VC_CLOSE_BRACKET, VC_PIPE, NativeKeyEvent.VC_DELETE, NativeKeyEvent.VC_END, NativeKeyEvent.VC_PAGE_DOWN, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, VC_ADD },
@@ -88,7 +133,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	};
 	
 	// Used for keys that exist multiple times on keyboard, e.g: lctrl & rctrl. These are all hard-coded. So they are unfortunately neither very manipulable nor developer-friendly.
-	private static final KeyMapKey[] keysVariational = new KeyMapKey[] {
+	public static final KeyMapKey[] keysVariational = new KeyMapKey[] {
 		// Ctrl keys
 		new KeyMapKey(NativeKeyEvent.VC_CONTROL, new KeyVariant[] { new KeyVariant(0, 5, 2, "lctrl"), new KeyVariant(15, 5, 3, "rctrl"), }),
 		// Alt keys
@@ -120,34 +165,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		// 9
 		new KeyMapKey(NativeKeyEvent.VC_9, new KeyVariant[] { new KeyVariant(9, 1, 1, "top_9"), new KeyVariant(21, 2, 4, "num_9"), }),
 	};
-
-	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
-	private static float[][] keyColours;
-	
-	// The keys going back to zero
-	private static boolean[][] keysDropping;
-	
-	// These 32-bit integers represent the hex colour codes.
-	// First 3 bytes are RGB colours respectively. Last byte is unused.
-	public static int colour1 = 0x88118800; //0xFF220000; //0x4411110;
-	public static int colour2 = 0x00FF8800; //0xFFFF0000; //0xFF002200;
-	
-	private static GUIManager gui;
-	private static boolean initialised = false;
-	
-	public static enum LEDMode {
-		Backlit, ReactiveBacklit, Rain, Random
-	};
-	
-	private static LEDMode ledMode = LEDMode.ReactiveBacklit;
-	private static boolean update = false;
-	
-	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
-	// TURN THIS OFF IN FINAL BUILDS.
-	private boolean RUN_WITHOUT_DEVICE = false;
-	public static boolean capsLockStays = false;
-	private static HidServices services;
-	
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		MainClass k = new MainClass();
@@ -161,30 +178,54 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			System.err.println("WARNING: RUN_WITHOUT_DEVICE IS TRUE! THIS SHOULD BE FALSE IF THE LEDS ARE TO BE SET !");
 		}
 		
+		// Randomise on start so I dont get sick of the colours too quickly.
+		int rand = ThreadLocalRandom.current().nextInt(0, 3);
+		byte r = 0, g = 0, b = 0;
+		r = (byte)ThreadLocalRandom.current().nextInt(0, 0xFF);
+		g = (byte)ThreadLocalRandom.current().nextInt(0, 0xFF);
+		b = (byte)ThreadLocalRandom.current().nextInt(0, 0xFF);
+		if (rand == 0) { r = (byte)0xFF; }
+		else if (rand == 1) { g = (byte)0xFF; }
+		else if (rand == 2) { b = (byte)0xFF; }
+		colour1 = (((r & 0xFFFFFFFF) << 24) & 0xFF000000) + 
+				(((g & 0xFFFFFFFF) << 16) & 0x00FF0000) + 
+				(((b & 0xFFFFFFFF) << 8) & 0x0000FF00);
+		rand = ThreadLocalRandom.current().nextInt(0, 3);
+		r = (byte)ThreadLocalRandom.current().nextInt(0, 0xFF);
+		g = (byte)ThreadLocalRandom.current().nextInt(0, 0xFF);
+		b = (byte)ThreadLocalRandom.current().nextInt(0, 0xFF);
+		if (rand == 0) { r = (byte)0xFF; }
+		else if (rand == 1) { g = (byte)0xFF; }
+		else if (rand == 2) { b = (byte)0xFF; }
+		colour2 = (((r & 0xFFFFFFFF) << 24) & 0xFF000000) + 
+				(((g & 0xFFFFFFFF) << 16) & 0x00FF0000) + 
+				(((b & 0xFFFFFFFF) << 8) & 0x0000FF00);
+		
 		// Key sniffer
 		sniffer = new KeystrokeSniffer();
-		sniffer.Initialise(this);
+		sniffer.initialise(this);
+		
+		initialiseNotifyIcon();
+		
+		// Initialise registry(prefs)
+		PrefsManager.initialise();
+		System.out.println("startMinimised = " + PrefsManager.prefStartMinimised);
+		System.out.println("capsSustain = " + PrefsManager.prefCapsSustain);
+		
+		// Initialise controllers. Pooled so not so much Garbage Collection. Not that that's even a problem xD
+		int[] cols = new int[] { colour1, colour2 };
+		ledContBacklit = new LEDBacklit(); ledContBacklit.setColours(cols);
+		ledContReactive = new LEDReactive(); ledContReactive.setColours(cols);
+		ledContWaveH = new LEDWaveH (); ledContWaveH.setColours(cols);
 		
 		// Initialise GUI.
 		gui = new GUIManager();
 		gui.initialise();
 		
-		keyColours = new float[POSEIDON_KEYSX][POSEIDON_KEYSY];
-		keysDropping = new boolean[POSEIDON_KEYSX][POSEIDON_KEYSY];
-		
-		// Find variational keys
-		/*
-		List<Integer> l = new ArrayList<Integer>();
-		for (int y = 0; y < keyMapKeycodes.length; y++) {
-			for (int x = 0; x < keyMapKeycodes[y].length; x++) {
-				l.add(keyMapKeycodes[y][x]);
-			}
-		}
-		
-		int[] dupes = Utils.getDupes(l, 0);
-		for (int x = 0; x < dupes.length; x++) {
-			System.out.println("DUPE FOUND: " + dupes[x]);
-		}*/
+		//boolean wasFocussed = gui.frame.isFocused();
+		GUIManager.frame.requestFocus();
+		capsOn = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
+		System.out.println("Caps lock " + (capsOn ? "on" : "off") + " by default...");
 		
 		// May move argument handling into a seperate function
 		if (args.length > 0) { 
@@ -197,9 +238,10 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		
 		initialised = true;
 		
+		// Initialise actual HID device and relevent objects.
 		HidServicesSpecification hidServiceSpecs = new HidServicesSpecification();
     	hidServiceSpecs.setAutoShutdown(true);
-    	hidServiceSpecs.setScanInterval(500);
+    	hidServiceSpecs.setScanInterval(200);
     	hidServiceSpecs.setPauseInterval(500);
     	hidServiceSpecs.setScanMode(ScanMode.SCAN_AT_FIXED_INTERVAL_WITH_PAUSE_AFTER_WRITE);
     	services = HidManager.getHidServices(hidServiceSpecs);
@@ -211,16 +253,18 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		if (!RUN_WITHOUT_DEVICE) {
 			// Iterate througheach device, and find the keyboard.
 			device = getDevice();
+			hidDevice = device;
 		}
 		
 		if (device != null || RUN_WITHOUT_DEVICE) {
 			// Main loop
-			mainLoop(device);
+			mainLoop();
 			device.close();
 		}
 		else {
 			System.err.println("DEVICE IS NULL");
 		}
+		
 		services.shutdown();
 		System.out.println("Applcation termination...");
 	}
@@ -228,63 +272,26 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private HidDevice getDevice () throws IOException {
 		HidDevice hidDevice = null;
     	for (HidDevice device : services.getAttachedHidDevices()) {
-    		System.out.println(device);
-    		if (device.getVendorId() == VENDOR_ID && device.getProductId() == PRODUCT_ID) {
+    		//System.out.println(device);
+    		if (device.getVendorId() == VENDOR_ID && device.getProductId() == PRODUCT_ID && device.getUsagePage() == 0xffffff01) {
     			boolean open = device.open();
-    			System.err.println(open);
+    			//System.err.println(open);
     			if (open) { 
-    				hidDevice = device; 
+    				System.out.println(device);
+    				hidDevice = device;
+    				break;
     			}
     		}
     	}
     	return hidDevice;
 	}
 	
-	private void mainLoop (HidDevice device) throws InterruptedException {
+	private void mainLoop () throws InterruptedException {
 		while (kill ^ true) {
-			switch (ledMode) {
-				case Backlit: {
-					setLEDs(device);
-					update = false;
-					while (!update) { Thread.sleep(1); }
-				} break;
-			
-				case ReactiveBacklit: {
-					// Actually set the LED's
-					setLEDs(device);
-					
-					int droppingCount = 0;
-					for (int x = 0; x < POSEIDON_KEYSX; x++) {
-						for (int y = 0; y < keyMapKeycodes.length; y++) {
-							if (keysDropping[x][y]) {
-								keyColours[x][y] -= 0.1f;
-								droppingCount++;
-								if (keyColours[x][y] <= 0.0f) {
-									keyColours[x][y] = 0.0f;
-									keysDropping[x][y] = false;
-								}
-							}
-						}
-					}
-					if (droppingCount == 0) {
-						update = false;
-					}
-					
-					// Sleep for 100 ms
-					Thread.sleep(100);
-					
-					// Wait for next update.
-					// This is very important, it makes the flicker less noticeable.
-					// So it is only visible when keys are actually changinc colour.
-					while (!update) { Thread.sleep(1); }
-				} break;
-				
-				default: {
-					setLEDs(device);
-					update = false;
-					while (!update) { Thread.sleep(1); }
-				} break;
-			}
+			setLEDs(hidDevice);
+			update = ledController.update();
+			Thread.sleep(100);
+			while (!update) { Thread.sleep(1); }
 		}
 	}
 	
@@ -303,7 +310,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     		for (int y = 0; y < POSEIDON_KEYSY; y++) {
     			int index = keyMap[y][x] - 1;
     			if (index > 0) {
-    				int colour = getColourAtKey(x, y);
+    				int colour = ledController.getColourAtKey(x, y);
     				bufferRG[index] = (byte)((colour >> 24) & 0xFF);
     				bufferRG[index + 128] = (byte)((colour >> 16) & 0xFF);
     				bufferB[index] = (byte)((colour >> 8) & 0xFF);
@@ -315,171 +322,171 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		try {
 			// Send RED-GRN buffer
 			int valRG = device.sendFeatureReport(bufferRG, (byte)POSEIDON_START);
-			if (valRG < 0) { System.err.println("ERROR[RG]: " + device.getLastErrorMessage()); }
+			if (valRG < 0) { System.err.println("ERROR SENDING BUFFER[RG]: " + device.getLastErrorMessage()); }
 			
 			Thread.sleep(10); // Was 1, set to 10 to prevent weird colour thing,
 			
 			// Send BLU buffer
 			int valB = device.sendFeatureReport(bufferB, (byte)POSEIDON_START);
-	    	if (valB < 0) { System.err.println("ERROR[RG]: " + device.getLastErrorMessage()); }
+	    	if (valB < 0) { System.err.println("ERROR SENDING BUFFER[B]: " + device.getLastErrorMessage()); }
 		}
 		catch (InterruptedException e) { e.printStackTrace(); }
 	}
 	
 	public static void setLEDMode (LEDMode newMode) {
 		ledMode = newMode;
-		setAllKeyLerpsZero();
+		boolean reactive = false;
+		switch (ledMode) {
+			case Backlit: { ledController = ledContBacklit; } break;
+			case ReactiveBacklit: { ledController = ledContReactive; reactive = true; } break;
+			case WaveH: { ledController = ledContWaveH; } break;
+			default: { ledController = ledContBacklit; } break;
+		}
+		
+		if (reactive) {
+			ledContReactive.setAllKeyLerpsZero();
+			System.out.println("Setting reactive lerps to zero.");
+		}
 		update = true;
+	}
+	
+	public static void refreshLEDColour () {
+		ledController.setColours(new int[] { colour1, colour2 });
 	}
 	
 	public static void refreshLEDs () { update = true; }
 	
-	private int getColourAtKey (int keyx, int keyy) {
-		switch (ledMode) {
-			case Backlit: {
-				return colour1;
-			}
-			case ReactiveBacklit: {	
-				// This could probably be optimised quite heavily.
-				float lerp = keyColours[keyx][keyy];
-				byte r0 = (byte)((colour1 >> 24) & 0xFF);
-				byte g0 = (byte)((colour1 >> 16) & 0xFF);
-				byte b0 = (byte)((colour1 >> 8) & 0xFF);
-				byte r1 = (byte)((colour2 >> 24) & 0xFF);
-				byte g1 = (byte)((colour2 >> 16) & 0xFF);
-				byte b1 = (byte)((colour2 >> 8) & 0xFF);
-				byte rl = (byte)Utils.lerp(Byte.toUnsignedInt(r0), Byte.toUnsignedInt(r1), lerp);
-				byte gl = (byte)Utils.lerp(Byte.toUnsignedInt(g0), Byte.toUnsignedInt(g1), lerp);
-				byte bl = (byte)Utils.lerp(Byte.toUnsignedInt(b0), Byte.toUnsignedInt(b1), lerp);
-				
-				// The last mask on the end is required because for some reason the blue buffer was getting values
-				// greater than 8-bits o_O
-				int rn = ((rl & 0xFFFFFFFF) << 24) & 0xFF000000;
-				int gn = ((gl & 0xFFFFFFFF) << 16) & 0x00FF0000;
-				int bn = ((bl & 0xFFFFFFFF) << 8) & 0x0000FF00;
-				//System.out.println("rn: " + Utils.hex(rn) + ", gn: " + Utils.hex(gn) + ", bn: " + Utils.hex(bn));
-				return (rn + gn + bn);
-			}
+	private void initialiseNotifyIcon () {
+		trayIcon = null;
+		if (SystemTray.isSupported()) {
+			System.out.println("System tray supported... Adding icon.");
 			
-			default: {
-				return colour1;
-			}
-		}
-	}
-
-	// This functions can be optimised alot. Just don't do it in a for-loop. This is temporary...
-	private void setKeyLerpValueFromKeymap (int keycode, float newlerp, int loc) {
-		boolean variationalKey = false;
-		KeyMapKey variational = null;
-		for (int i = 0; i < keysVariational.length; i++) {
-			variational = keysVariational[i];
-			if (keycode == variational.keycode) {
-				variationalKey = true;
-				break;
-			}
-		}
-		
-		if (!variationalKey) {
-			for (int y = 0; y < keyMapKeycodes.length; y++) {
-				for (int x = 0; x < keyMapKeycodes[y].length; x++) {
-					if (keycode == keyMapKeycodes[y][x]) {
-						if (newlerp == 0.0f) {
-							keysDropping[x][y] = true;
-						}
-						else {
-							keyColours[x][y] = newlerp;
-						}
-						break;
+			itemShow = new MenuItem("Restore Window");
+			itemMin = new MenuItem("Minimise Window to Tray");
+			MenuItem itemQuit = new MenuItem("Quit"); // TODO GET THIS WORKING
+			
+			SystemTray tray = SystemTray.getSystemTray();
+			Image image = Toolkit.getDefaultToolkit().getImage("ICON.gif");
+			ActionListener listener = new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					Object src = e.getSource();
+					if (src == itemShow) {
+						GUIManager.windowRestore();
 					}
+					else if (src == itemMin) {
+						GUIManager.windowMinimise();
+					}
+					
+					refreshNotifyPopupVisibilityStates();
 				}
+			};
+			// Icon menu
+			PopupMenu pop = new PopupMenu();
+			
+			// Set enabled if window is visible. (Only applies on startup here...)
+			refreshNotifyPopupVisibilityStates();
+			
+			itemShow.addActionListener(listener);
+			pop.add(itemShow);
+			itemMin.addActionListener(listener);
+			pop.add(itemMin);
+			itemQuit.addActionListener(listener);
+			pop.add(itemQuit);
+			
+			// Construct the actual icon
+			trayIcon = new TrayIcon(image, "Poseidon Z RGB Controller", pop);
+			trayIcon.addActionListener(listener);
+			
+			// Add to tray
+			try {
+				tray.add(trayIcon);
+			}
+			catch (AWTException e) {
+				System.err.println(e);
 			}
 		}
 		else {
-			// Variational key. Set specific key.
-			int x = 0, y = 0;
-			KeyVariant[] variants = variational.variants;
-			for (int i = 0; i < variants.length; i++) {
-				KeyVariant v = variants[i];
-				if (v.loc == loc) {
-					x = v.x;
-					y = v.y;
-					//System.out.println("KEY: " + v.brief);
-					break;
-				}
-			}
-			
-			if (newlerp == 0.0f) {
-				keysDropping[x][y] = true;
-			}
-			else {
-				keyColours[x][y] = newlerp;
-			}
+			System.out.println("System tray NOT supported...");
 		}
 	}
 	
-	public static void setAllKeyLerpsZero () {
-		if (!initialised) { return; }
-		
-		for (int y = 0; y < keyMapKeycodes.length; y++) {
-			for (int x = 0; x < keyMapKeycodes[y].length; x++) {
-				keysDropping[x][y] = false;
-				keyColours[x][y] = 0.0f;
-			}
-		}
+	public static void refreshNotifyPopupVisibilityStates() {
+		boolean showing = GUIManager.windowShowing;
+		itemShow.setEnabled(showing ^ true);
+		itemMin.setEnabled(showing);
 	}
 	
 	@Override
 	public void nativeKeyPressed(NativeKeyEvent arg0) {
-		//System.out.println(arg0.getRawCode());
-		//System.out.println(arg0.getKeyCode());
-		
-		//System.out.print("location: " + arg0.getKeyLocation());
-		int keycode = arg0.getKeyCode();
-		if (ledMode == LEDMode.ReactiveBacklit) {
-			setKeyLerpValueFromKeymap(keycode, 1.0f, arg0.getKeyLocation());
-			update = true;
+		// Call key listen functions
+		if (ledController instanceof ILEDListenableKeys) {
+			((ILEDListenableKeys)ledController).keyPress(arg0);
 		}
 	}
 
 	@Override
 	public void nativeKeyReleased(NativeKeyEvent arg0) { 
-		int keycode = arg0.getKeyCode();
-		
-		if (capsLockStays) {
-			boolean capsOn = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
-			if (capsOn) {
-				setKeyLerpValueFromKeymap(NativeKeyEvent.VC_CAPS_LOCK, 1.0f, 1);
-				update = true;
-				//System.out.println("caps lock on");
-			}
-			else {
-				setKeyLerpValueFromKeymap(NativeKeyEvent.VC_CAPS_LOCK, 0.0f, 1);
-				update = true;
-				//System.out.println("caps lock off");
-			}
-		}
-		boolean allowSet = capsLockStays ? (keycode != NativeKeyEvent.VC_CAPS_LOCK) : true;
-		if (allowSet) {
-			setKeyLerpValueFromKeymap(keycode, 0.0f, arg0.getKeyLocation());
-			if (ledMode == LEDMode.ReactiveBacklit) {
-				setKeyLerpValueFromKeymap(keycode, 1.0f, arg0.getKeyLocation());
-				update = true;
-			}
+		if (ledController instanceof ILEDListenableKeys) {
+			((ILEDListenableKeys)ledController).keyRelease(arg0);
 		}
 	}
 
 	@Override
 	public void nativeKeyTyped(NativeKeyEvent arg0) { }
 	
-	 public void hidDeviceDetached(HidServicesEvent event) {
-    	System.err.println("Device detached: " + event);
+	private boolean dettaching = false;
+	public void hidDeviceDetached(HidServicesEvent event) {
+		if (dettaching) { return; }
+    	dettaching = true;
+    	
+		String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+    	System.err.println("Device detached: [" + timestamp + "] " + event);
+    	
+    	HidDevice d = event.getHidDevice();
+    	if (d.getProductId() == PRODUCT_ID && d.getVendorId() == VENDOR_ID) {
+    		d.close();
+    		hidDevice = null;
+    		System.out.println("Poseidon Z RGB detached.");
+    	}
+    	
+    	try { Thread.sleep(500); } 
+    	catch (InterruptedException e) { e.printStackTrace(); }
+    	dettaching = false;
     }
 
     public void hidFailure(HidServicesEvent event) {
     	System.err.println("HID failure: " + event);
     }
     
+    private boolean attaching = false;
     public void hidDeviceAttached(HidServicesEvent event) {
-    	System.err.println("Device attached: " + event);
+    	if (attaching) { return; }
+    	attaching = true;
+    	
+		String timestamp = new Timestamp(System.currentTimeMillis()).toString();
+		System.err.println("Device attached: [" + timestamp + "] " + event);
+
+    	HidDevice d = event.getHidDevice();
+    	if (d.getProductId() == PRODUCT_ID && d.getVendorId() == VENDOR_ID) {
+    		System.out.println("Poseidon Z RGB attached.");
+    		
+    		try { 
+    			hidDevice = getDevice();
+    			setAllKeyLerpsZero();
+    			refreshLEDs();
+    		} 
+    		catch (IOException e) { e.printStackTrace(); }
+    	}
+    	
+    	// Prevents console spam, and prevents LED's being set an insane amount of times.
+    	try { Thread.sleep(500); } 
+    	catch (InterruptedException e) { e.printStackTrace(); }
+    	attaching = false;
+    }
+    
+    public static void setAllKeyLerpsZero () {
+    	if (ledController instanceof LEDReactive) {
+    		((LEDReactive)ledController).setAllKeyLerpsZero ();
+    	}
     }
 }

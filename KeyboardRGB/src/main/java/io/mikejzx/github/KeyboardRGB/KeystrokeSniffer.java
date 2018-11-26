@@ -23,7 +23,7 @@ public class KeystrokeSniffer implements NativeKeyListener {
 	private boolean initialised = false;
 	private MainClass mainClass = null;
 	
-	public void Initialise (MainClass m) {
+	public void initialise (MainClass m) {
 		if (initialised) { return; }
 		initialised = true;
 		
@@ -40,7 +40,7 @@ public class KeystrokeSniffer implements NativeKeyListener {
 		GlobalScreen.addNativeKeyListener(mainClass);
 	}
 	
-	public void Deinitialise () {
+	public void deinitialise () {
 		if (!initialised) { return; }
 		initialised = false;
 		try { GlobalScreen.unregisterNativeHook(); } 

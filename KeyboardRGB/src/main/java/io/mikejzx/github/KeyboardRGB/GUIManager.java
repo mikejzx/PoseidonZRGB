@@ -16,16 +16,20 @@ import javax.swing.JPanel;
 
 public class GUIManager {
 	
-	private static GUIWindow frame;
+	public static GUIWindow frame;
 	
 	public static JComboBox<String> combo;
 	public static final String COMBOTYPE_STR_BACKLIT = "Backlit";
 	public static final String COMBOTYPE_STR_REACTIVEBACKLIT = "Reactive + Backlight";
+	public static final String COMBOTYPE_STR_WAVEH = "WAVEH";
+	public static final String COMBOTYPE_STR_WAVEV = "WAVEV";
 	public static final String COMBOTYPE_STR_RAIN = "Rain";
-	public static final String COMBOTYPE_STR_RAND= "Random Dots";
+	public static final String COMBOTYPE_STR_RAND = "Random Dots";
 	
 	public static JButton buttonColour1, buttonColour2;
 	public static JCheckBox checkCapsStay;
+	
+	public static boolean windowShowing = true;
 	
 	public void initialise() {
 		System.out.println("GUIManage initialise.");
@@ -33,7 +37,15 @@ public class GUIManager {
 		initialiseFrame();
 		initialisePanels();
 		frame.initialiseMenus();
-		showFrame (); // Show the window
+		if (PrefsManager.prefStartMinimised == 0) {
+			showFrame (); // Show the window
+		}
+		else {
+			windowMinimise ();
+			if (PrefsManager.prefStartMinimised != 1) {
+				PrefsManager.setPref_startMinimised(1);
+			}
+		}
 	}
 	
 	private void initialiseFrame () {
@@ -48,7 +60,7 @@ public class GUIManager {
 		    @Override
 		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
 				// Clean up the native hook.
-				if (MainClass.sniffer != null) { MainClass.sniffer.Deinitialise(); }
+				if (MainClass.sniffer != null) { MainClass.sniffer.deinitialise(); }
 				MainClass.kill();
 				System.runFinalization();
 				System.exit(0);
@@ -77,8 +89,10 @@ public class GUIManager {
 		combo = new JComboBox<String>();
 		combo.addItem(COMBOTYPE_STR_BACKLIT);
 		combo.addItem(COMBOTYPE_STR_REACTIVEBACKLIT);
-		combo.addItem(COMBOTYPE_STR_RAIN);
-		combo.addItem(COMBOTYPE_STR_RAND);
+		combo.addItem(COMBOTYPE_STR_WAVEH);
+		//combo.addItem(COMBOTYPE_STR_WAVEV);
+		//combo.addItem(COMBOTYPE_STR_RAIN); (When implemented, may put a little reference to 'Dragon - Rain' just for fun? :P)
+		//combo.addItem(COMBOTYPE_STR_RAND);
 		combo.addItemListener(frame);
 		combo.setSelectedIndex(1);
 		panel.add(combo);
@@ -87,13 +101,37 @@ public class GUIManager {
 		checkCapsStay = new JCheckBox("Caps-Lock shows it's status");
 		//checkCapsStay.addActionListener(frame);
 		checkCapsStay.addItemListener(frame);
+		if (PrefsManager.prefCapsSustain == 1) {
+			checkCapsStay.setSelected(true);
+		}
+		else {
+			checkCapsStay.setSelected(false);
+		}
 		panel.add(checkCapsStay);
-		
+
 		JLabel creditLabel = new JLabel ("Michael's Poseidon Z RGB Controller");
 		JLabel versionLabel = new JLabel("Version: " + MainClass.SOFTWARE_VERSION);
 		JLabel javaLabel = new JLabel("Proudly written in Java.");
+		JLabel instrLabel = new JLabel("Make sure you've set your keyboard LED mode to 'static' in the official software!");
 		panel.add(creditLabel);
 		panel.add(versionLabel);
 		panel.add(javaLabel);
+		panel.add(instrLabel);
+	}
+	
+	public static void windowMinimise () {
+		if (!windowShowing) { return; }
+		windowShowing = false;
+		MainClass.refreshNotifyPopupVisibilityStates();
+		
+		frame.setVisible(false);
+	}
+	
+	public static void windowRestore () {
+		if (windowShowing) { return; }
+		windowShowing = true;
+		MainClass.refreshNotifyPopupVisibilityStates();
+		
+		frame.setVisible(true);
 	}
 }
