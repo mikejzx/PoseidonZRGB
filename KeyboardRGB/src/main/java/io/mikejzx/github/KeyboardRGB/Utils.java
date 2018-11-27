@@ -41,6 +41,8 @@ public final class Utils {
 	// Insanely fast Absolute function using bit-wise xor'ing and shifting...
 	public static int abs(int x) {return (x+(x>>31))^(x>>31);}
 	
+	public static float abs (float x) { return x < 0.0 ? -x : x; }
+	
 	public static Color toRGB (int hex) { return new Color((hex>>24)&0xFF,(hex>>16)&0xFF,(hex>>8)&0xFF); }
 	
 	public static int toHex (Color c) {

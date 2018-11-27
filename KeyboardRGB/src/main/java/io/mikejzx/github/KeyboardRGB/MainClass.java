@@ -108,7 +108,12 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private boolean RUN_WITHOUT_DEVICE = false;
 	
 	public static enum LEDMode {
-		Backlit, ReactiveBacklit, Rain, Random, WaveH, WaveV
+		Backlit(1, 0), ReactiveBacklit(2, 1), WaveH(16, 2), WaveV(32, 3), Rain(4, 4), Random(8, 5);
+		
+		public int id, idx;
+		LEDMode(int v, int cv) { this.id = v; this.idx = cv; }
+		public int getID () { return id; }
+		public int getIdx () { return idx; }
 	};
 	
 	private static final int[][] keyMap = {
@@ -250,6 +255,9 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     	services.start();
     	HidDevice device = null;
     	
+    	// TODO: REMOVE THIS
+    	setLEDMode(LEDMode.WaveH);
+    	
 		if (!RUN_WITHOUT_DEVICE) {
 			// Iterate througheach device, and find the keyboard.
 			device = getDevice();
@@ -347,6 +355,13 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			ledContReactive.setAllKeyLerpsZero();
 			System.out.println("Setting reactive lerps to zero.");
 		}
+		
+		int idx = ledMode.getIdx();
+		if (GUIManager.combo.getSelectedIndex() != idx) {
+			GUIManager.combo.setSelectedIndex(idx);
+			System.out.println("hi");
+		}
+		
 		update = true;
 	}
 	
