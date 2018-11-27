@@ -30,6 +30,7 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDListenableKeys;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDReactive;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveH;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
 
 /*
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -102,6 +103,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private static LEDBacklit ledContBacklit;
 	private static LEDReactive ledContReactive;
 	private static LEDWaveH ledContWaveH;
+	private static LEDWaveV ledContWaveV;
 	
 	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
 	// TURN THIS OFF IN FINAL BUILDS.
@@ -222,6 +224,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		ledContBacklit = new LEDBacklit(); ledContBacklit.setColours(cols);
 		ledContReactive = new LEDReactive(); ledContReactive.setColours(cols);
 		ledContWaveH = new LEDWaveH (); ledContWaveH.setColours(cols);
+		ledContWaveV = new LEDWaveV (); ledContWaveV.setColours(cols);
 		
 		// Initialise GUI.
 		gui = new GUIManager();
@@ -348,6 +351,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			case Backlit: { ledController = ledContBacklit; } break;
 			case ReactiveBacklit: { ledController = ledContReactive; reactive = true; } break;
 			case WaveH: { ledController = ledContWaveH; } break;
+			case WaveV: { ledController = ledContWaveV; } break;
 			default: { ledController = ledContBacklit; } break;
 		}
 		

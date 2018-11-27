@@ -21,8 +21,8 @@ public class GUIManager {
 	public static JComboBox<String> combo;
 	public static final String COMBOTYPE_STR_BACKLIT = "Backlit";
 	public static final String COMBOTYPE_STR_REACTIVEBACKLIT = "Reactive + Backlight";
-	public static final String COMBOTYPE_STR_WAVEH = "WAVEH";
-	public static final String COMBOTYPE_STR_WAVEV = "WAVEV";
+	public static final String COMBOTYPE_STR_WAVEH = "WAVEH (IN DEV...)";
+	public static final String COMBOTYPE_STR_WAVEV = "WAVEV (IN DEV...)";
 	public static final String COMBOTYPE_STR_RAIN = "Rain";
 	public static final String COMBOTYPE_STR_RAND = "Random Dots";
 	
@@ -90,7 +90,7 @@ public class GUIManager {
 		combo.addItem(COMBOTYPE_STR_BACKLIT);
 		combo.addItem(COMBOTYPE_STR_REACTIVEBACKLIT);
 		combo.addItem(COMBOTYPE_STR_WAVEH);
-		//combo.addItem(COMBOTYPE_STR_WAVEV);
+		combo.addItem(COMBOTYPE_STR_WAVEV);
 		//combo.addItem(COMBOTYPE_STR_RAIN); (When implemented, may put a little reference to 'Dragon - Rain' just for fun? :P)
 		//combo.addItem(COMBOTYPE_STR_RAND);
 		combo.addItemListener(frame);
