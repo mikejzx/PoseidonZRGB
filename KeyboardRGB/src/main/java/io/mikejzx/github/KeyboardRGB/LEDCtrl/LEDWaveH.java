@@ -31,8 +31,8 @@ public class LEDWaveH implements ILEDController {
 			}
 		}
 		
-		//try { Thread.sleep(500); } 
-		//catch (InterruptedException e) { e.printStackTrace(); }
+		try { Thread.sleep(500); } 
+		catch (InterruptedException e) { e.printStackTrace(); }
 		
 		// Wrap
 		waveStartX++;
