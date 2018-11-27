@@ -56,5 +56,3 @@ public class LEDWaveH implements ILEDController {
 		keyColours = new int[MainClass.POSEIDON_KEYSX][MainClass.POSEIDON_KEYSY];
 	}
 }
-
-// https://www.youtube.com/watch?v=4KEZQGWQL6E
