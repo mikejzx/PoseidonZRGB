@@ -65,7 +65,7 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
 
 public class MainClass implements NativeKeyListener, HidServicesListener
 {
-	public static String SOFTWARE_VERSION = "0.0.2_04-SNAPSHOT(alpha)";
+	public static String SOFTWARE_VERSION = "0.0.2_05-SNAPSHOT(alpha)";
 	
 	public static boolean kill = false;
 	public static void kill() { kill = true; }
@@ -259,7 +259,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     	HidDevice device = null;
     	
     	// TODO: REMOVE THIS
-    	setLEDMode(LEDMode.WaveH);
+    	//setLEDMode(LEDMode.WaveH);
     	
 		if (!RUN_WITHOUT_DEVICE) {
 			// Iterate througheach device, and find the keyboard.
@@ -363,7 +363,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		int idx = ledMode.getIdx();
 		if (GUIManager.combo.getSelectedIndex() != idx) {
 			GUIManager.combo.setSelectedIndex(idx);
-			System.out.println("hi");
 		}
 		
 		update = true;

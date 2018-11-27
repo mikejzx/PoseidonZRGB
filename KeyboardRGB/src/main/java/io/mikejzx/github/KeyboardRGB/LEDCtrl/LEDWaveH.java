@@ -17,9 +17,13 @@ public class LEDWaveH implements ILEDController {
 			for (int x = 0; x < MainClass.POSEIDON_KEYSX; x++) {
 				float div = (float)(MainClass.POSEIDON_KEYSX + waveStartX);
 				float lerp = (float)(x - waveStartX) / div;
-				
+
 				if (lerp < 0.0f || lerp > 1.0f) {
-					lerp = (float)((x + MainClass.POSEIDON_KEYSX) - waveStartX) / (float)(waveStartX);
+					lerp = (float)(((x * 2) + MainClass.POSEIDON_KEYSX) - waveStartX) / div;
+					// For some reason, x needs to be multiplied by two, or else the previous wave,
+					// will be moving at a faster rate than the original.
+					
+					//lerp = (float)((x + MainClass.POSEIDON_KEYSX) - waveStartX) / (float)(waveStartX);
 				}
 				
 				lerp = Utils.clamp(lerp, 0.0f, 1.0f); 
@@ -32,8 +36,8 @@ public class LEDWaveH implements ILEDController {
 			}
 		}
 		
-		try { Thread.sleep(50); } 
-		catch (InterruptedException e) { e.printStackTrace(); }
+		//try { Thread.sleep(200); } 
+		//catch (InterruptedException e) { e.printStackTrace(); }
 		
 		// Wrap
 		waveStartX++;

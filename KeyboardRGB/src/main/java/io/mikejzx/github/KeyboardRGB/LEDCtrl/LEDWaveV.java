@@ -18,19 +18,19 @@ public class LEDWaveV implements ILEDController {
 				float lerp = (float)(y - waveStartY) / div;
 				
 				if (lerp < 0.0f || lerp > 1.0f) {
-					lerp = (float)((y + MainClass.POSEIDON_KEYSY) - waveStartY) / (float)(waveStartY);
+					lerp = (float)(((y * 2) + MainClass.POSEIDON_KEYSY) - waveStartY) / div;
 				}
 				
 				lerp = Utils.clamp(lerp, 0.0f, 1.0f); 
-				//lerp = Utils.abs(lerp - 0.5f) * 2.0f;
+				lerp = Utils.abs(lerp - 0.5f) * 2.0f;
 				int colour = Utils.lerpColour(colours[0], colours[1], lerp);
 				
 				keyColours[x][y] = colour;
 			}
 		}
 		
-		try { Thread.sleep(50); } 
-		catch (InterruptedException e) { e.printStackTrace(); }
+		//try { Thread.sleep(50); } 
+		//catch (InterruptedException e) { e.printStackTrace(); }
 		
 		// Wrap
 		waveStartY++;
