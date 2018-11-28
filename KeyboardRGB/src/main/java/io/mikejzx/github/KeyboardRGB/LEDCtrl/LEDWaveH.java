@@ -20,6 +20,7 @@ public class LEDWaveH implements ILEDController {
 
 				if (lerp < 0.0f || lerp > 1.0f) {
 					lerp = (float)(((x * 2) + MainClass.POSEIDON_KEYSX) - waveStartX) / div;
+					
 					// For some reason, x needs to be multiplied by two, or else the previous wave,
 					// will be moving at a faster rate than the original.
 					
@@ -27,8 +28,20 @@ public class LEDWaveH implements ILEDController {
 				}
 				
 				lerp = Utils.clamp(lerp, 0.0f, 1.0f); 
-				lerp = Utils.abs(lerp - 0.5f) * 2.0f;
-				int colour = Utils.lerpColour(colours[0], colours[1], lerp);
+				//lerp = Utils.abs(lerp - 0.5f) * 2.0f;
+				
+				/*
+				int[] rainbow = new int[] {
+					0xFF000000, // Red
+					0x00FF0000, // Green
+					0x0000FF00, // Blue
+				};
+				int colour = Utils.evaluateWaveCurve(rainbow, lerp);
+				*/
+				
+				int colour = Utils.lerpRainbow(lerp);
+						
+				//int colour = Utils.lerpColour(colours[0], colours[1], lerp);
 				//colour = Utils.lerpColour(0x00ff0000, 0xff000000, lerp);
 				//if (lerp == 0.0f || lerp == 0.0f) { colour = 0x00000000; }
 				

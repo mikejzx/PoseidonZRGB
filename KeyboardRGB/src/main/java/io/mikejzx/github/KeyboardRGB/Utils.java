@@ -115,4 +115,39 @@ public final class Utils {
     {
         return lerp(start, end, value * value * (3.0f - 2.0f * value));
     }
+	
+	public static int evaluateWaveCurve (int[] points, float lerp) {
+		int ret = 0x00000000;
+		for (int i = 0; i < points.length; i++) {
+			
+		}
+		return ret;
+	}
+	
+	public static int lerpRainbow (float lerp) {
+		float h = 0.5f;
+		int ret = 0x00000000;
+		
+		int r = 0x00;
+		int g = 0x00;
+		int b = 0x00;
+		
+		float c = lerp / h;
+		if (lerp <= h) {
+			r = Utils.lerp(0xFF, 0x00, c);
+			g = Utils.lerp(0x00, 0xFF, c);
+			b = 0x00;
+		}
+		else {
+			r = 0x00;
+			g = Utils.lerp(0xFF, 0x00, c);
+			b = Utils.lerp(0x00, 0xFF, c);
+		}
+		
+		ret = (((r & 0xFFFFFFFF) << 24) & 0xFF000000) + 
+				(((g & 0xFFFFFFFF) << 16) & 0x00FF0000) + 
+				(((b & 0xFFFFFFFF) << 8) & 0x0000FF00);
+		
+		return ret;
+	}
 }

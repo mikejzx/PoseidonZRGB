@@ -26,8 +26,8 @@ import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDController;
-import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDListenableKeys;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDReactive;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveH;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
@@ -98,7 +98,8 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private static MenuItem itemMin, itemShow;
 	private static HidDevice hidDevice;
 	private static ILEDController ledController;
-	private TrayIcon trayIcon;
+	private static TrayIcon trayIcon;
+	private static Updater swUpdater;
 	
 	private static LEDBacklit ledContBacklit;
 	private static LEDReactive ledContReactive;
@@ -110,12 +111,22 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private boolean RUN_WITHOUT_DEVICE = false;
 	
 	public static enum LEDMode {
-		Backlit(1, 0), ReactiveBacklit(2, 1), WaveH(16, 2), WaveV(32, 3), Rain(4, 4), Random(8, 5);
+		Backlit(1, 0, "BackLit", true), 
+		ReactiveBacklit(2, 1, "Reactive(+Backlit)", true), 
+		WaveH(16, 2, "Wave (Horizontal)", true), 
+		WaveV(32, 3, "Wave (Vertical)", true), 
+		Rain(4, 4, "Rain", false), 
+		Random(8, 5, "Random", false);
+		// Unimplemented: LED Spirals, Matrix, 
 		
 		public int id, idx;
-		LEDMode(int v, int cv) { this.id = v; this.idx = cv; }
+		public String thisName;
+		public boolean implemented = false;
+		LEDMode(int v, int cv, String displayName, boolean impl) { this.id = v; this.idx = cv; thisName = displayName; implemented = impl; }
 		public int getID () { return id; }
 		public int getIdx () { return idx; }
+		public String getDisplayName() { return thisName; }
+		public boolean getImplemented () { return implemented; }
 	};
 	
 	private static final int[][] keyMap = {
@@ -128,7 +139,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		{ 13, 21, 29,   0,   0,   0,   0,  45,   0,   0,   0,   0,  85,  93, 109, 117,  14,  22,  30,  70,   0,  94,   0 }
 	};
 	
-	public static final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83;
+	public static final int VC_PIPE = 43, VC_SUPER = 3675, VC_ADD = 3662, VC_NUMLOCK = 69, VC_DIV = 53, VC_MUL = 3639, VC_MINUS = 3658, VC_QMARK = 53, VC_RSHIFT = 3638, VC_FULLSTOP = 83, VC_FUNCTION = 93;
 	// Could be a bit cleaner...
 	public static final int[][] keyMapKeycodes = {
 		{ NativeKeyEvent.VC_ESCAPE, 0, NativeKeyEvent.VC_F1, NativeKeyEvent.VC_F2, NativeKeyEvent.VC_F3,  NativeKeyEvent.VC_F4, 0, NativeKeyEvent.VC_F5,  NativeKeyEvent.VC_F6, NativeKeyEvent.VC_F7, NativeKeyEvent.VC_F8, 0, NativeKeyEvent.VC_F9, NativeKeyEvent.VC_F10, NativeKeyEvent.VC_F11, NativeKeyEvent.VC_F12, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.VC_SCROLL_LOCK, NativeKeyEvent.VC_PAUSE },
@@ -136,8 +147,10 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		{ NativeKeyEvent.VC_TAB, 0, NativeKeyEvent.VC_Q,NativeKeyEvent.VC_W, NativeKeyEvent.VC_E, NativeKeyEvent.VC_R, NativeKeyEvent.VC_R, NativeKeyEvent.VC_T, NativeKeyEvent.VC_Y, NativeKeyEvent.VC_U, NativeKeyEvent.VC_I, NativeKeyEvent.VC_O, NativeKeyEvent.VC_P, NativeKeyEvent.VC_OPEN_BRACKET, NativeKeyEvent.VC_CLOSE_BRACKET, VC_PIPE, NativeKeyEvent.VC_DELETE, NativeKeyEvent.VC_END, NativeKeyEvent.VC_PAGE_DOWN, NativeKeyEvent.VC_7, NativeKeyEvent.VC_8, NativeKeyEvent.VC_9, VC_ADD },
 		{ NativeKeyEvent.VC_CAPS_LOCK, 0, NativeKeyEvent.VC_A, NativeKeyEvent.VC_S, NativeKeyEvent.VC_D, NativeKeyEvent.VC_F, 0, NativeKeyEvent.VC_G, NativeKeyEvent.VC_H, NativeKeyEvent.VC_J, NativeKeyEvent.VC_K, NativeKeyEvent.VC_L, NativeKeyEvent.VC_SEMICOLON, NativeKeyEvent.VC_QUOTE, NativeKeyEvent.VC_ENTER, 0, 0, 0, 0, NativeKeyEvent.VC_4, NativeKeyEvent.VC_5, NativeKeyEvent.VC_6 },
 		{ NativeKeyEvent.VC_SHIFT, 0, NativeKeyEvent.VC_Z, NativeKeyEvent.VC_X, NativeKeyEvent.VC_C, NativeKeyEvent.VC_V, 0, NativeKeyEvent.VC_B, 0, NativeKeyEvent.VC_N, NativeKeyEvent.VC_M, NativeKeyEvent.VC_COMMA, NativeKeyEvent.VC_PERIOD, VC_QMARK, VC_RSHIFT, 0, 0, NativeKeyEvent.VC_UP, 0, NativeKeyEvent.VC_1, NativeKeyEvent.VC_2, NativeKeyEvent.VC_3 },
-		{ NativeKeyEvent.VC_CONTROL, VC_SUPER, NativeKeyEvent.VC_ALT, 0, 0, 0, 0, NativeKeyEvent.VC_SPACE, 0, 0, 0, 0, NativeKeyEvent.VC_ALT, 0, NativeKeyEvent.VC_CONTEXT_MENU, NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT, NativeKeyEvent.VC_DOWN, NativeKeyEvent.VC_RIGHT, NativeKeyEvent.VC_0, 0, VC_FULLSTOP, NativeKeyEvent.VC_ENTER },
+		{ NativeKeyEvent.VC_CONTROL, VC_SUPER, NativeKeyEvent.VC_ALT, 0, 0, 0, 0, NativeKeyEvent.VC_SPACE, 0, 0, 0, 0, NativeKeyEvent.VC_ALT, VC_FUNCTION, NativeKeyEvent.VC_CONTEXT_MENU, NativeKeyEvent.VC_CONTROL, NativeKeyEvent.VC_LEFT, NativeKeyEvent.VC_DOWN, NativeKeyEvent.VC_RIGHT, NativeKeyEvent.VC_0, 0, VC_FULLSTOP, NativeKeyEvent.VC_ENTER },
 	};
+	
+	// Function key doesn't work unfortunately. It does not trigger nativeKeyPressed for some reason.
 	
 	// Used for keys that exist multiple times on keyboard, e.g: lctrl & rctrl. These are all hard-coded. So they are unfortunately neither very manipulable nor developer-friendly.
 	public static final KeyMapKey[] keysVariational = new KeyMapKey[] {
@@ -213,6 +226,20 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		sniffer.initialise(this);
 		
 		initialiseNotifyIcon();
+		
+		/*
+		LookAndFeelInfo[] inst = UIManager.getInstalledLookAndFeels();
+		for (int i = 0; i < inst.length; i++) { System.out.println(inst[i]); }
+		try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); }
+		try { UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel"); } 
+		catch (InstantiationException e) {e.printStackTrace(); } 
+		catch (IllegalAccessException e) {e.printStackTrace(); } 
+		catch (ClassNotFoundException e) { e.printStackTrace(); } 
+		catch (UnsupportedLookAndFeelException e) { e.printStackTrace(); }
+		*/
+		
+		swUpdater = new Updater();
+		//swUpdater.promptForUpdate();
 		
 		// Initialise registry(prefs)
 		PrefsManager.initialise();
@@ -301,7 +328,8 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		while (kill ^ true) {
 			setLEDs(hidDevice);
 			update = ledController.update();
-			Thread.sleep(100);
+			//Thread.sleep(100);
+			Thread.sleep(200);
 			while (!update) { Thread.sleep(1); }
 		}
 	}
@@ -316,6 +344,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     	for (int i = 0; i < PACKET_SIZE; i++) { bufferRG[i] = (byte)0x00; bufferB[i] = (byte)0x00; }
     	bufferRG[0] = POSEIDON_LEDCMD; bufferRG[1] = POSEIDON_PROFILE; bufferRG[2] = POSEIDON_CHANNEL_REDGRN;
     	bufferB[0] = POSEIDON_LEDCMD; bufferB[1] = POSEIDON_PROFILE; bufferB[2] = POSEIDON_CHANNEL_BLU;
+    	
     	// Assign colour bytes.
     	for (int x = 0; x < POSEIDON_KEYSX; x++) {
     		for (int y = 0; y < POSEIDON_KEYSY; y++) {

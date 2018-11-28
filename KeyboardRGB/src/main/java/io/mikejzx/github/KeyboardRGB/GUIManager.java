@@ -1,14 +1,23 @@
 package io.mikejzx.github.KeyboardRGB;
 
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTabbedPane;
+
+import io.mikejzx.github.KeyboardRGB.MainClass.LEDMode;
 
 /*
  * Handles the Graphical User-Interface of the application
@@ -33,7 +42,7 @@ public class GUIManager {
 	
 	public void initialise() {
 		System.out.println("GUIManage initialise.");
-		
+	
 		initialiseFrame();
 		initialisePanels();
 		frame.initialiseMenus();
@@ -77,6 +86,42 @@ public class GUIManager {
 		JPanel panel = new JPanel();
 		frame.getContentPane().add(panel);
 		
+		// Tab pane
+		JPanel[] tabPanels = new JPanel[] {
+			new JPanel(), // Backlit
+			new JPanel(), // Reactive
+			new JPanel(), // Wave H
+			new JPanel(), // Wave V
+		};
+		
+		//Color radColour =  new Color(200, 221, 242);
+		Color radColour =  new Color(0.0f, 0.0f, 0.0f, 0.0f);
+		ButtonGroup group = new ButtonGroup();
+		JTabbedPane tabs = new JTabbedPane();
+		tabs.setTabPlacement(JTabbedPane.RIGHT);
+		LEDMode[] modes = LEDMode.values();
+		for (int i = 0; i < modes.length - 3; i++) {
+			if (!modes[i].getImplemented()) { continue; }
+			LEDMode mode = modes[i];
+			tabs.addTab(null, tabPanels[i]);
+			JRadioButton tabRadio = new JRadioButton(mode.name());
+			tabRadio.setBackground(radColour);
+			tabRadio.setOpaque(false);
+			tabRadio.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					if (arg0.getSource() == tabRadio) {
+						//tabs.setSelectedIndex(index);
+					}
+				}
+			});
+			tabs.setTabComponentAt(i, tabRadio);
+			group.add(tabRadio);
+			if (i == 0) { tabRadio.setSelected(true); }
+		}
+		panel.add(tabs);
+		
+		/*
 		// Button
 		buttonColour1 = new JButton("Set Primary Colour");
 		buttonColour2 = new JButton("Set Secondary Colour");
@@ -117,6 +162,7 @@ public class GUIManager {
 		panel.add(versionLabel);
 		panel.add(javaLabel);
 		panel.add(instrLabel);
+		*/
 	}
 	
 	public static void windowMinimise () {
