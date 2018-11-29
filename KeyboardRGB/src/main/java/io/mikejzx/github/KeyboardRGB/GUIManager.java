@@ -3,6 +3,7 @@ package io.mikejzx.github.KeyboardRGB;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -91,6 +92,7 @@ public class GUIManager {
 	private void initialisePanels () {
 		// Main panel
 		JPanel panel = new JPanel(new BorderLayout());
+		panel.setBounds(0, 0, 100, 100);
 		frame.getContentPane().add(panel);
 		
 		// Tab pane
@@ -160,6 +162,10 @@ public class GUIManager {
 		panReactive.add(sqrColReact1);
 		panReactive.add(sqrColReact2);
 		
+		JPanel flowPanel = new JPanel(new FlowLayout());
+		//frame.getContentPane().add(flowPanel);
+		JLabel labVersion = new JLabel(MainClass.SOFTWARE_VERSION);
+		flowPanel.add(labVersion);
 		
 		// Button
 		/*

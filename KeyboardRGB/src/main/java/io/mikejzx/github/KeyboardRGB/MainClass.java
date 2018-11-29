@@ -317,6 +317,23 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			// Iterate througheach device, and find the keyboard.
 			device = getDevice();
 			hidDevice = device;
+			
+			while (device == null) {
+				System.err.println("DEVICE IS NULL");
+				String msg = "A TTeSports Poseidon Z Keyboard could not be found.\nPlease check your keyboard's connection, and ensure it is working properly\n\nIf you click 'O.K', you will need to restart the program after conecting the keyboard.";
+				String[] options = new String[] { "O.K", "Retry" };
+				int res = JOptionPane.showOptionDialog(null, msg, "Poseidon Z RGB Controller", JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[1]);
+				
+				// User gave up :(
+				if (res == 0) {
+					break;
+				}
+				// User retrying
+				else {
+					device = getDevice();
+					hidDevice = device;
+				}
+			}
 		}
 		
 		if (device != null || RUN_WITHOUT_DEVICE) {
