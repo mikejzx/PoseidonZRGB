@@ -23,15 +23,15 @@ public class LEDWaveV implements ILEDController {
 				
 				lerp = Utils.clamp(lerp, 0.0f, 1.0f); 
 				//lerp = Utils.abs(lerp - 0.5f) * 2.0f;
-				//int colour = Utils.lerpColour(colours[0], colours[1], lerp);
-				int colour = Utils.lerpRainbow(lerp);
+				int colour = Utils.lerpColour(colours[0], colours[1], lerp);
+				//int colour = Utils.lerpRainbow(lerp);
 				
 				keyColours[x][y] = colour;
 			}
 		}
 		
-		//try { Thread.sleep(50); } 
-		//catch (InterruptedException e) { e.printStackTrace(); }
+		try { Thread.sleep(100); } 
+		catch (InterruptedException e) { e.printStackTrace(); }
 		
 		// Wrap
 		waveStartY++;

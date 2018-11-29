@@ -10,6 +10,8 @@ public class PrefsManager {
 	public static final String PREFSTR_STARTMIN = "startMinimised";
 	public static final String PREFSTR_CAPSUSTAIN = "capsSustain";
 	
+	// TODO: SAVE LED MODE PREF HERE
+	
 	private static Preferences prefs;
 	
 	public static void initialise () {

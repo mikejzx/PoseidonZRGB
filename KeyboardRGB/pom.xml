@@ -4,7 +4,7 @@
 
   <groupId>io.mikejzx.github</groupId>
   <artifactId>KeyboardRGB</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2_05-SNAPSHOT(alpha)</version>
   <packaging>jar</packaging>
 
   <name>KeyboardRGB</name>
@@ -21,5 +21,14 @@
 		<artifactId>hid4java</artifactId>
 		<version>0.5.0</version>
 	  </dependency>
-</dependencies>
+  </dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+	</build>
 </project>

@@ -77,24 +77,28 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 			this.dispose();
 			//MainClass.kill();
 		}
-		else if (src == GUIManager.buttonColour1) {
+		else if (src == GUIManager.buttonColBacklit) {
 			Color newColour = JColorChooser.showDialog(null, "Change the primary colour.", Utils.toRGB(MainClass.colour1));
 			if (newColour != null) {
 				MainClass.colour1 = Utils.toHex(newColour);
-				//System.out.print("COLOUR: " + newColour.getRed() + ", " + newColour.getGreen() + ", " + newColour.getBlue());
-				//System.out.println("HEX: " + Utils.hex(Utils.toHex(newColour)));
-				MainClass.setAllKeyLerpsZero();
-				MainClass.refreshLEDColour();
-				MainClass.refreshLEDs();
+				MainClass.setAllKeyLerpsZero(); MainClass.refreshLEDColour(); MainClass.refreshLEDs();
+				GUIManager.sqrColBacklit.setColour(newColour);
 			}
 		}
-		else if (src == GUIManager.buttonColour2) {
+		else if (src == GUIManager.buttonCol1React) {
 			Color newColour = JColorChooser.showDialog(null, "Change the primary colour.", Utils.toRGB(MainClass.colour2));
 			if (newColour != null) {
+				MainClass.colour1 = Utils.toHex(newColour);
+				MainClass.setAllKeyLerpsZero(); MainClass.refreshLEDColour(); MainClass.refreshLEDs();
+				GUIManager.sqrColReact1.setColour(newColour);
+			}
+		}
+		else if (src == GUIManager.buttonCol2React) {
+			Color newColour = JColorChooser.showDialog(null, "Change the secondary colour.", Utils.toRGB(MainClass.colour2));
+			if (newColour != null) {
 				MainClass.colour2 = Utils.toHex(newColour);
-				MainClass.setAllKeyLerpsZero();
-				MainClass.refreshLEDColour();
-				MainClass.refreshLEDs();
+				MainClass.setAllKeyLerpsZero(); MainClass.refreshLEDColour(); MainClass.refreshLEDs();
+				GUIManager.sqrColReact2.setColour(newColour);
 			}
 		}
 		else if (src == menuItemMinimise) {

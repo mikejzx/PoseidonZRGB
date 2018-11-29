@@ -13,7 +13,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
+
+import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
@@ -29,6 +35,7 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDController;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDListenableKeys;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDReactive;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDTravel;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveH;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
 
@@ -61,6 +68,9 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
 	E:\Programs\Tt eSPORTS POSEIDON Z RGB\POSEIDON Z RGB.exe
 	(Will extract it eventually)
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+	// TODO: Path follow LED when app starts. With whit wave after it
+	// TODO: Create an in-app emulator of the actualy keyboard.
 */
 
 public class MainClass implements NativeKeyListener, HidServicesListener
@@ -105,10 +115,12 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private static LEDReactive ledContReactive;
 	private static LEDWaveH ledContWaveH;
 	private static LEDWaveV ledContWaveV;
+	private static LEDTravel ledContTravel;
 	
 	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
 	// TURN THIS OFF IN FINAL BUILDS.
 	private boolean RUN_WITHOUT_DEVICE = false;
+	private boolean DO_START_EFFECT = true;
 	
 	public static enum LEDMode {
 		Backlit(1, 0, "BackLit", true), 
@@ -198,6 +210,20 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			System.err.println("WARNING: RUN_WITHOUT_DEVICE IS TRUE! THIS SHOULD BE FALSE IF THE LEDS ARE TO BE SET !");
 		}
 		
+		// Check if version matches with .XML file. If not throw an error to remind me xD
+		final Properties prop = new Properties();
+		prop.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
+		String xmlVer = prop.getProperty("swversion");
+		if (xmlVer.equals(SOFTWARE_VERSION)) {
+			System.out.println("SWVERSION EXTRACTED FROM XML: " + xmlVer + " [EQUAL]");
+		}
+		else {
+			System.out.println("SWVERSION EXTRACTED FROM XML: " + xmlVer + " [IN-EQUAL, FATAL]");
+			String msg = "The version in pom.xml does not match String SOFTWARE_VERSION from MainClass.java !\nTELL THE DEVELOPER TO CHANGE IT GODDAMNIT.";
+			String[] options = new String[] { "O.K" };
+			JOptionPane.showOptionDialog(null, msg, "ERROR", JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[0]);
+		}
+		
 		// Randomise on start so I dont get sick of the colours too quickly.
 		int rand = ThreadLocalRandom.current().nextInt(0, 3);
 		byte r = 0, g = 0, b = 0;
@@ -230,8 +256,9 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		/*
 		LookAndFeelInfo[] inst = UIManager.getInstalledLookAndFeels();
 		for (int i = 0; i < inst.length; i++) { System.out.println(inst[i]); }
-		try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); }
-		try { UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel"); } 
+		//try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); }
+		//try { UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel"); } 
+		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } 
 		catch (InstantiationException e) {e.printStackTrace(); } 
 		catch (IllegalAccessException e) {e.printStackTrace(); } 
 		catch (ClassNotFoundException e) { e.printStackTrace(); } 
@@ -252,6 +279,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		ledContReactive = new LEDReactive(); ledContReactive.setColours(cols);
 		ledContWaveH = new LEDWaveH (); ledContWaveH.setColours(cols);
 		ledContWaveV = new LEDWaveV (); ledContWaveV.setColours(cols);
+		ledContTravel = new LEDTravel(); ledContTravel.setColours(cols);
 		
 		// Initialise GUI.
 		gui = new GUIManager();
@@ -285,9 +313,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     	services.start();
     	HidDevice device = null;
     	
-    	// TODO: REMOVE THIS
-    	//setLEDMode(LEDMode.WaveH);
-    	
 		if (!RUN_WITHOUT_DEVICE) {
 			// Iterate througheach device, and find the keyboard.
 			device = getDevice();
@@ -295,6 +320,13 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		}
 		
 		if (device != null || RUN_WITHOUT_DEVICE) {
+			setLEDMode(LEDMode.Backlit);
+			
+			// Cool starting effect.
+			if (DO_START_EFFECT) {
+				doStartEffect();
+			}
+			
 			// Main loop
 			mainLoop();
 			device.close();
@@ -307,31 +339,43 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		System.out.println("Applcation termination...");
 	}
 	
-	private HidDevice getDevice () throws IOException {
-		HidDevice hidDevice = null;
-    	for (HidDevice device : services.getAttachedHidDevices()) {
-    		//System.out.println(device);
-    		if (device.getVendorId() == VENDOR_ID && device.getProductId() == PRODUCT_ID && device.getUsagePage() == 0xffffff01) {
-    			boolean open = device.open();
-    			//System.err.println(open);
-    			if (open) { 
-    				System.out.println(device);
-    				hidDevice = device;
-    				break;
-    			}
-    		}
-    	}
-    	return hidDevice;
-	}
-	
 	private void mainLoop () throws InterruptedException {
 		while (kill ^ true) {
 			setLEDs(hidDevice);
 			update = ledController.update();
-			//Thread.sleep(100);
-			Thread.sleep(200);
+			Thread.sleep(100);
+			//Thread.sleep(200);
 			while (!update) { Thread.sleep(1); }
 		}
+	}
+	
+	// Just for fun.
+	private void doStartEffect () throws InterruptedException {
+		ILEDController prev = ledController;
+		ledController = ledContTravel;
+		while (!((LEDTravel)ledController).done) {
+			setLEDs(hidDevice);
+			update = ledController.update();
+			Thread.sleep(5);
+			while (!update) { Thread.sleep(1); }
+		}
+		System.out.println("start effect a complete");
+		final int offset = 10;
+		int[] colOld = new int[ledContWaveH.colours.length];
+		for (int i = 0; i < colOld.length; i++) { colOld[i] = ledContWaveH.colours[i]; }
+		ledContWaveH.setColours(new int[] { 0xFFFFFF00, 0x00000000 });
+		ledContWaveH.setWavePosition(-offset);
+		ledController = ledContWaveH;
+		for (int i = 0; i < POSEIDON_KEYSX + offset + 1; i++) {
+			setLEDs(hidDevice);
+			update = ((LEDWaveH)ledController).updateStartEffect();
+			Thread.sleep(10);
+			while (!update) { Thread.sleep(1); }
+		}
+		System.out.println("start effect b complete");
+		ledContWaveH.setColours(colOld);
+		ledController = prev;
+		System.out.println("Done start effect");
 	}
 	
 	private void setLEDs (HidDevice device) {
@@ -373,6 +417,23 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		catch (InterruptedException e) { e.printStackTrace(); }
 	}
 	
+	private HidDevice getDevice () throws IOException {
+		HidDevice hidDevice = null;
+    	for (HidDevice device : services.getAttachedHidDevices()) {
+    		//System.out.println(device);
+    		if (device.getVendorId() == VENDOR_ID && device.getProductId() == PRODUCT_ID && device.getUsagePage() == 0xffffff01) {
+    			boolean open = device.open();
+    			//System.err.println(open);
+    			if (open) { 
+    				System.out.println(device);
+    				hidDevice = device;
+    				break;
+    			}
+    		}
+    	}
+    	return hidDevice;
+	}
+	
 	public static void setLEDMode (LEDMode newMode) {
 		ledMode = newMode;
 		boolean reactive = false;
@@ -390,7 +451,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		}
 		
 		int idx = ledMode.getIdx();
-		if (GUIManager.combo.getSelectedIndex() != idx) {
+		if (GUIManager.combo != null && GUIManager.combo.getSelectedIndex() != idx) {
 			GUIManager.combo.setSelectedIndex(idx);
 		}
 		
