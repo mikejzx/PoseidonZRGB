@@ -12,14 +12,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.swing.JOptionPane;
-import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
@@ -31,6 +29,7 @@ import org.hid4java.event.HidServicesEvent;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
+import io.mikejzx.github.GUI.MainGUI;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDController;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDListenableKeys;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
@@ -71,6 +70,7 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
 
 	// TODO: Path follow LED when app starts. With whit wave after it
 	// TODO: Create an in-app emulator of the actualy keyboard.
+	// TODO: allow user to explicity specify the keyboard if it will not work.
 */
 
 public class MainClass implements NativeKeyListener, HidServicesListener
@@ -102,7 +102,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	public static boolean capsLockStays = false;
 	public static boolean capsOn = false;
 	private static HidServices services;
-	private static GUIManager gui;
+	private static MainGUI gui;
 	private static LEDMode ledMode = LEDMode.ReactiveBacklit;
 	private static boolean update = false;
 	private static MenuItem itemMin, itemShow;
@@ -129,7 +129,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		WaveV(32, 3, "Wave (Vertical)", true), 
 		Rain(4, 4, "Rain", false), 
 		Random(8, 5, "Random", false);
-		// Unimplemented: LED Spirals, Matrix, 
+		// Unimplemented: LED Spirals, Matrix, Day/night mode (warm colours @ night, cool during day.)
 		
 		public int id, idx;
 		public String thisName;
@@ -198,12 +198,12 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		new KeyMapKey(NativeKeyEvent.VC_9, new KeyVariant[] { new KeyVariant(9, 1, 1, "top_9"), new KeyVariant(21, 2, 4, "num_9"), }),
 	};
 	
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args) throws IOException, InterruptedException, URISyntaxException {
 		MainClass k = new MainClass();
 		k.invoke(args);
 	}
 	
-	public void invoke (String[] args) throws IOException, InterruptedException {
+	public void invoke (String[] args) throws IOException, InterruptedException, URISyntaxException {
 		System.out.println("Hello, world ! Invoked...");
 		
 		if (RUN_WITHOUT_DEVICE) {
@@ -253,18 +253,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		
 		initialiseNotifyIcon();
 		
-		/*
-		LookAndFeelInfo[] inst = UIManager.getInstalledLookAndFeels();
-		for (int i = 0; i < inst.length; i++) { System.out.println(inst[i]); }
-		//try { UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); }
-		//try { UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel"); } 
-		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } 
-		catch (InstantiationException e) {e.printStackTrace(); } 
-		catch (IllegalAccessException e) {e.printStackTrace(); } 
-		catch (ClassNotFoundException e) { e.printStackTrace(); } 
-		catch (UnsupportedLookAndFeelException e) { e.printStackTrace(); }
-		*/
-		
 		swUpdater = new Updater();
 		//swUpdater.promptForUpdate();
 		
@@ -282,15 +270,15 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		ledContTravel = new LEDTravel(); ledContTravel.setColours(cols);
 		
 		// Initialise GUI.
-		gui = new GUIManager();
+		gui = new MainGUI();
 		gui.initialise();
 		
 		//boolean wasFocussed = gui.frame.isFocused();
-		GUIManager.frame.requestFocus();
+		//GUIManager.frame.requestFocus();
 		capsOn = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
 		System.out.println("Caps lock " + (capsOn ? "on" : "off") + " by default...");
 		
-		// May move argument handling into a seperate function
+		// May move argument handling into a seperate function?
 		if (args.length > 0) { 
 			// Pass in arguments for colours.
 			if (args.length == 2) {
@@ -318,6 +306,10 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			device = getDevice();
 			hidDevice = device;
 			
+			if (device == null) {
+				MainGUI.setConectionStatus(false);
+			}
+			
 			while (device == null) {
 				System.err.println("DEVICE IS NULL");
 				String msg = "A TTeSports Poseidon Z Keyboard could not be found.\nPlease check your keyboard's connection, and ensure it is working properly\n\nIf you click 'O.K', you will need to restart the program after conecting the keyboard.";
@@ -335,6 +327,8 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 				}
 			}
 		}
+		
+		MainGUI.setConectionStatus(device != null);
 		
 		if (device != null || RUN_WITHOUT_DEVICE) {
 			setLEDMode(LEDMode.Backlit);
