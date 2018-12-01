@@ -19,12 +19,12 @@ public class PrefsManager {
 		
 		// First check if all values exist. If not, set them.
 		int got;
-		got = prefs.getInt(PREFSTR_STARTMIN, 0);
-		if (got == 0) { prefs.putInt(PREFSTR_STARTMIN, 0); }
+		got = prefs.getInt(PREFSTR_STARTMIN, -1);
+		if (got == -1) { prefs.putInt(PREFSTR_STARTMIN, 0); }
 		prefStartMinimised = got;
 		
-		got = prefs.getInt(PREFSTR_CAPSUSTAIN, 0);
-		if (got == 0) { prefs.putInt(PREFSTR_CAPSUSTAIN, 0); }
+		got = prefs.getInt(PREFSTR_CAPSUSTAIN, -1);
+		if (got == -1) { prefs.putInt(PREFSTR_CAPSUSTAIN, 1); }
 		prefCapsSustain = got;
 	}
 	

@@ -8,6 +8,8 @@ import java.awt.EventQueue;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -24,6 +26,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -38,7 +41,9 @@ import javax.swing.event.ChangeListener;
 
 import io.mikejzx.github.KeyboardRGB.MainClass;
 import io.mikejzx.github.KeyboardRGB.MainClass.LEDMode;
+import io.mikejzx.github.KeyboardRGB.PrefsManager;
 import io.mikejzx.github.KeyboardRGB.Utils;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWave;
 
 /*
  * This is the new GUI handler. Keep in mind that alot of code in this file is 
@@ -46,12 +51,13 @@ import io.mikejzx.github.KeyboardRGB.Utils;
  * that instead of programming every goddamn element myself.
 */
 
-public class MainGUI implements ChangeListener {
+public class MainGUI implements ChangeListener, ItemListener {
 
 	public static JButton btnApply;
 	public static Thread labelThread;
 	public static JFrame frmMainFrame;
 	public static boolean labelThreadRunning = false;
+	public static boolean windowShowing = false;
 	
 	private static Map<JRadioButton, Integer> tabIndices;
 	private static Map<Integer, MainClass.LEDMode> tabMode;
@@ -70,13 +76,30 @@ public class MainGUI implements ChangeListener {
 	private static final String CONNECTION_TRUE_STR = "<html>Connection Status: <font color=green><strong>O.K !</strong></font></html>";
 	private static final Color COLOUR_TRANS =  new Color(0.0f, 0.0f, 0.0f, 0.0f);
 	
+	private static JCheckBox chCapsSustain;
+	
+	// Note: main instance refers to the MainGUI instance that is in MainClass.java !
+	public MainGUI(boolean mainInstance) throws URISyntaxException {
+		if (mainInstance) { return; }
+		init();
+	}
+	
 	public void initialise() {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					MainGUI window = new MainGUI(false);
-					window.frmMainFrame.setLocationByPlatform(true);
-					window.frmMainFrame.setVisible(true);
+					new MainGUI(false); // Call ctor
+					frmMainFrame.setLocationByPlatform(true);
+					
+					if (PrefsManager.prefStartMinimised == 0) {
+						windowRestore ();
+					}
+					else {
+						windowMinimise ();
+						if (PrefsManager.prefStartMinimised != 1) {
+							PrefsManager.setPref_startMinimised(1);
+						}
+					}
 					
 					// Override height. (Put here so that it doesn't get called in design view. Because it will cause an error.)
 					//tabs_ledmode.setUI(new javax.swing.plaf.basic.BasicTabbedPaneUI() { @Override protected int calculateTabHeight(int tabPlacement, int tabIndex, int fontHeight) { return 20; } } );		
@@ -86,12 +109,6 @@ public class MainGUI implements ChangeListener {
 				System.out.println("[MainGUI.java] finished");
 			}
 		});
-	}
-
-	// Note: main instance refers to the MainGUI instance that is in MainClass.java !
-	public MainGUI(boolean mainInstance) throws URISyntaxException {
-		if (mainInstance) { return; }
-		init();
 	}
 
 	private void init() throws URISyntaxException {
@@ -160,32 +177,46 @@ public class MainGUI implements ChangeListener {
 		JButton btnCol0_react = new GUIColourPickerButton("Set Colour (Primary)", "Set primary colour (reactive mode)", MainClass.ledContReactive.colours, 0, (GUISquare)sqrCol0_react);
 		JButton btnCol1_react = new GUIColourPickerButton("Set Colour (Secondary)", "Set secondary colour (reactive mode)", MainClass.ledContReactive.colours, 1, (GUISquare)sqrCol1_react);
 		
+		chCapsSustain = new JCheckBox("Caps-Lock sustain when ON");
+		chCapsSustain.addItemListener(this);
+		if (PrefsManager.prefCapsSustain == 1) {
+			chCapsSustain.setSelected(true);
+		}
+		else {
+			chCapsSustain.setSelected(false);
+		}
+		
 		GroupLayout gl_panel_reac = new GroupLayout(panel_reac);
 		gl_panel_reac.setHorizontalGroup(
 			gl_panel_reac.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_panel_reac.createSequentialGroup()
 					.addContainerGap()
-					.addGroup(gl_panel_reac.createParallelGroup(Alignment.TRAILING, false)
-						.addComponent(btnCol0_react, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-						.addComponent(btnCol1_react, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_panel_reac.createParallelGroup(Alignment.LEADING)
-						.addComponent(sqrCol0_react, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE)
-						.addComponent(sqrCol1_react, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE))
-					.addContainerGap(393, Short.MAX_VALUE))
+						.addGroup(gl_panel_reac.createSequentialGroup()
+							.addGroup(gl_panel_reac.createParallelGroup(Alignment.TRAILING, false)
+								.addComponent(btnCol0_react, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+								.addComponent(btnCol1_react, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(gl_panel_reac.createParallelGroup(Alignment.LEADING)
+								.addComponent(sqrCol0_react, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE)
+								.addComponent(sqrCol1_react, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE)))
+						.addComponent(chCapsSustain))
+					.addContainerGap(189, Short.MAX_VALUE))
 		);
 		gl_panel_reac.setVerticalGroup(
 			gl_panel_reac.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_panel_reac.createSequentialGroup()
 					.addContainerGap()
 					.addGroup(gl_panel_reac.createParallelGroup(Alignment.LEADING)
-						.addComponent(btnCol0_react)
+						.addComponent(btnCol0_react, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 						.addComponent(sqrCol0_react, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE))
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_panel_reac.createParallelGroup(Alignment.LEADING)
 						.addComponent(sqrCol1_react, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE)
-						.addComponent(btnCol1_react))
-					.addContainerGap(212, Short.MAX_VALUE))
+						.addComponent(btnCol1_react, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(chCapsSustain)
+					.addContainerGap(64, Short.MAX_VALUE))
 		);
 		panel_reac.setLayout(gl_panel_reac);
 		tabs_ledmode.addTab("waveh", null, panel_wave, null);
@@ -193,6 +224,14 @@ public class MainGUI implements ChangeListener {
 		JComboBox<String> combo_waveDir = new JComboBox<String>();
 		combo_waveDir.setModel(new DefaultComboBoxModel<String>(new String[] {"UP,", "DOWN,", "RIGHT,", "LEFT,"}));
 		combo_waveDir.setSelectedIndex(1);
+		combo_waveDir.addActionListener(new ActionListener () {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				int idx = combo_waveDir.getSelectedIndex();
+				LEDWave.WaveDirection dir = LEDWave.WaveDirection.values()[idx];
+				MainClass.ledContWave.waveDir = dir;
+			}
+		});
 		
 		JLabel lblWaveDirection = new JLabel("Wave Direction:");
 		GroupLayout gl_panel_wave = new GroupLayout(panel_wave);
@@ -487,5 +526,35 @@ public class MainGUI implements ChangeListener {
 			try { Thread.sleep(100); } catch (InterruptedException e) 
 			{ e.printStackTrace(); }
 		}
+	}
+
+	@Override
+	public void itemStateChanged(ItemEvent e) {
+		if (e.getSource() == chCapsSustain) {
+			if (e.getStateChange() == ItemEvent.SELECTED) {
+				MainClass.capsLockStays = true;
+				PrefsManager.setPref_capsSustain(1);
+			}
+			else {
+				MainClass.capsLockStays = false;
+				PrefsManager.setPref_capsSustain(0);
+			}
+		}
+	}
+	
+	public static void windowMinimise () {
+		if (!windowShowing) { return; }
+		windowShowing = false;
+		MainClass.refreshNotifyPopupVisibilityStates();
+		
+		frmMainFrame.setVisible(false);
+	}
+	
+	public static void windowRestore () {
+		if (windowShowing) { return; }
+		windowShowing = true;
+		MainClass.refreshNotifyPopupVisibilityStates();
+		
+		frmMainFrame.setVisible(true);
 	}
 }

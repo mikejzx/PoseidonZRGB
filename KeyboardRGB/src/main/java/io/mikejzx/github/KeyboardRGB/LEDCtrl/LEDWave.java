@@ -52,7 +52,7 @@ public class LEDWave implements ILEDController {
 		catch (InterruptedException e) { e.printStackTrace(); }
 		
 		// Wrap
-		if (waveDir == WaveDirection.RIGHT || waveDir == WaveDirection.DOWN) {
+		if (waveDir == WaveDirection.LEFT || waveDir == WaveDirection.DOWN) {
 			waveStart++;
 			if (waveStart >= max) {
 				waveStart = 0;

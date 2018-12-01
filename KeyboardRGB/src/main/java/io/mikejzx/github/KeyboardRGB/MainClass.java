@@ -106,7 +106,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private static MainGUI gui;
 	private static LEDMode ledMode = LEDMode.ReactiveBacklit;
 	private static boolean update = false;
-	private static MenuItem itemMin, itemShow;
+	private static MenuItem itemMin, itemShow, itemQuit;
 	private static HidDevice hidDevice;
 	private static ILEDController ledController;
 	private static TrayIcon trayIcon;
@@ -273,6 +273,9 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		// Initialise GUI.
 		gui = new MainGUI(true);
 		gui.initialise();
+		
+		// Set enabled if window is visible. (Only applies on startup here...)
+		refreshNotifyPopupVisibilityStates();
 		
 		//boolean wasFocussed = gui.frame.isFocused();
 		//GUIManager.frame.requestFocus();
@@ -478,11 +481,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			System.out.println("[MainClass.java] Setting reactive lerps to zero.");
 		}
 		
-		int idx = ledMode.getIdx();
-		if (GUIManager.combo != null && GUIManager.combo.getSelectedIndex() != idx) {
-			GUIManager.combo.setSelectedIndex(idx);
-		}
-		
 		update = true;
 	}
 	
@@ -499,7 +497,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			
 			itemShow = new MenuItem("Restore Window");
 			itemMin = new MenuItem("Minimise Window to Tray");
-			MenuItem itemQuit = new MenuItem("Quit"); // TODO GET THIS WORKING
+			itemQuit = new MenuItem("Quit"); // TODO GET THIS WORKING
 			
 			SystemTray tray = SystemTray.getSystemTray();
 			Image image = Toolkit.getDefaultToolkit().getImage("ICON.gif");
@@ -507,10 +505,13 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 				public void actionPerformed(ActionEvent e) {
 					Object src = e.getSource();
 					if (src == itemShow) {
-						GUIManager.windowRestore();
+						MainGUI.windowRestore();
 					}
 					else if (src == itemMin) {
-						GUIManager.windowMinimise();
+						MainGUI.windowMinimise();
+					}
+					else if (src == itemQuit) {
+						kill();
 					}
 					
 					refreshNotifyPopupVisibilityStates();
@@ -518,9 +519,6 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			};
 			// Icon menu
 			PopupMenu pop = new PopupMenu();
-			
-			// Set enabled if window is visible. (Only applies on startup here...)
-			refreshNotifyPopupVisibilityStates();
 			
 			itemShow.addActionListener(listener);
 			pop.add(itemShow);
@@ -557,7 +555,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	}
 	
 	public static void refreshNotifyPopupVisibilityStates() {
-		boolean showing = GUIManager.windowShowing;
+		boolean showing = MainGUI.windowShowing;
 		itemShow.setEnabled(showing ^ true);
 		itemMin.setEnabled(showing);
 	}
