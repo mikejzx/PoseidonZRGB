@@ -4,7 +4,7 @@ package io.mikejzx.github.KeyboardRGB.LEDCtrl;
 
 public class LEDBacklit implements ILEDController {
 	
-	private int[] colours;
+	public int[] colours;
 	
 	@Override
 	// Backlit only has 1 colour.

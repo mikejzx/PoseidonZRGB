@@ -1,9 +1,13 @@
-package io.mikejzx.github.KeyboardRGB;
+package io.mikejzx.github.GUI;
 
 import java.awt.Color;
 import java.awt.Graphics;
 
 import javax.swing.JPanel;
+
+/*
+ * This displays a square, basically...
+*/
 
 public class GUISquare extends JPanel {
 	
@@ -11,14 +15,10 @@ public class GUISquare extends JPanel {
 	
 	private Color colour;
 	
-	private int x;
-	private int y;
 	private final int width = 32;
 	private final int height = 32;
 	
-	public GUISquare(int x, int y, Color c){
-	    this.x = x;
-	    this.y = y;
+	public GUISquare(Color c){
 	    this.colour = c;
 	}
 
@@ -34,10 +34,10 @@ public class GUISquare extends JPanel {
 	    
 	    // Main rect
 	    g.setColor(colour);
-	    g.fillRect(x, y, width, height);
+	    g.fillRect(0, 0, width, height);
 	    
 	    // Outline
 	    g.setColor(Color.black);
-	    g.drawRect(x, y, width, height);
+	    g.drawRect(0, 0, width, height);
 	}
 }

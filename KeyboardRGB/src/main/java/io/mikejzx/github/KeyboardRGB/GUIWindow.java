@@ -19,6 +19,11 @@ import javax.swing.KeyStroke;
 
 import io.mikejzx.github.KeyboardRGB.MainClass.LEDMode;
 
+/*
+* EDIT 01.12.2018: THIS CLASS IS NO LONGER USED FOR GUI.
+* SEE MainGUI.java FROM PKG: io.mikejzx.github.GUI
+*/
+
 public class GUIWindow extends JFrame implements WindowListener, ActionListener, ItemListener {
 	
 	private static final long serialVersionUID = 1L;
@@ -124,11 +129,7 @@ public class GUIWindow extends JFrame implements WindowListener, ActionListener,
 				} break;
 				
 				case (GUIManager.COMBOTYPE_STR_WAVEH): {
-					mode = LEDMode.WaveH;
-				} break;
-				
-				case (GUIManager.COMBOTYPE_STR_WAVEV): {
-					mode = LEDMode.WaveV;
+					mode = LEDMode.Wave;
 				} break;
 				
 				case (GUIManager.COMBOTYPE_STR_RAIN): {

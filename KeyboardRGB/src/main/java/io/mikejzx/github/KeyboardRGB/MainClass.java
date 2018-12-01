@@ -18,6 +18,8 @@ import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.hid4java.HidDevice;
 import org.hid4java.HidManager;
@@ -35,8 +37,7 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.ILEDListenableKeys;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDBacklit;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDReactive;
 import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDTravel;
-import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveH;
-import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
+import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWave;
 
 /*
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -69,16 +70,16 @@ import io.mikejzx.github.KeyboardRGB.LEDCtrl.LEDWaveV;
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 	// TODO: Path follow LED when app starts. With whit wave after it
-	// TODO: Create an in-app emulator of the actualy keyboard.
+	// TODO: Create an in-app display of the actualy keyboard.
 	// TODO: allow user to explicity specify the keyboard if it will not work.
 */
 
 public class MainClass implements NativeKeyListener, HidServicesListener
 {
-	public static String SOFTWARE_VERSION = "0.0.2_05-SNAPSHOT(alpha)";
+	public static final String SOFTWARE_VERSION = "0.0.2_06-SNAPSHOT(alpha)";
 	
 	public static boolean kill = false;
-	public static void kill() { kill = true; }
+	public static void kill() { kill = true; update = true; }
 	public static KeystrokeSniffer sniffer;
 	
 	public static final short VENDOR_ID = 0x264a;
@@ -111,11 +112,10 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private static TrayIcon trayIcon;
 	private static Updater swUpdater;
 	
-	private static LEDBacklit ledContBacklit;
-	private static LEDReactive ledContReactive;
-	private static LEDWaveH ledContWaveH;
-	private static LEDWaveV ledContWaveV;
-	private static LEDTravel ledContTravel;
+	public static LEDBacklit ledContBacklit;
+	public static LEDReactive ledContReactive;
+	public static LEDWave ledContWave;
+	public static LEDTravel ledContTravel;
 	
 	// For developing the program (GUI, tweaks, etc...) without the keyboard connected.
 	// TURN THIS OFF IN FINAL BUILDS.
@@ -125,10 +125,9 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	public static enum LEDMode {
 		Backlit(1, 0, "BackLit", true), 
 		ReactiveBacklit(2, 1, "Reactive(+Backlit)", true), 
-		WaveH(16, 2, "Wave (Horizontal)", true), 
-		WaveV(32, 3, "Wave (Vertical)", true), 
-		Rain(4, 4, "Rain", false), 
-		Random(8, 5, "Random", false);
+		Wave(4, 2, "Wave", true), 
+		Rain(8, 4, "Rain", false), 
+		Random(16, 5, "Random", false);
 		// Unimplemented: LED Spirals, Matrix, Day/night mode (warm colours @ night, cool during day.)
 		
 		public int id, idx;
@@ -204,7 +203,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	}
 	
 	public void invoke (String[] args) throws IOException, InterruptedException, URISyntaxException {
-		System.out.println("Hello, world ! Invoked...");
+		System.out.println("[MainClass.java] Hello, world ! Invoked...");
 		
 		if (RUN_WITHOUT_DEVICE) {
 			System.err.println("WARNING: RUN_WITHOUT_DEVICE IS TRUE! THIS SHOULD BE FALSE IF THE LEDS ARE TO BE SET !");
@@ -215,13 +214,13 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		prop.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
 		String xmlVer = prop.getProperty("swversion");
 		if (xmlVer.equals(SOFTWARE_VERSION)) {
-			System.out.println("SWVERSION EXTRACTED FROM XML: " + xmlVer + " [EQUAL]");
+			System.out.println("[MainClass.java] SWVERSION EXTRACTED FROM XML: " + xmlVer + " [EQUAL]");
 		}
 		else {
-			System.out.println("SWVERSION EXTRACTED FROM XML: " + xmlVer + " [IN-EQUAL, FATAL]");
-			String msg = "The version in pom.xml does not match String SOFTWARE_VERSION from MainClass.java !\nTELL THE DEVELOPER TO CHANGE IT GODDAMNIT.";
+			System.out.println("[MainClass.java] SWVERSION EXTRACTED FROM XML: " + xmlVer + " [IN-EQUAL, FATAL]");
+			String msg = "The version in pom.xml does not match static final String SOFTWARE_VERSION from MainClass.java !\nTELL THE DEVELOPER TO CHANGE IT GODDAMNIT.";
 			String[] options = new String[] { "O.K" };
-			JOptionPane.showOptionDialog(null, msg, "ERROR", JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[0]);
+			JOptionPane.showOptionDialog(null, msg, "Poseidon Z RGB Controller ERROR", JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[0]);
 		}
 		
 		// Randomise on start so I dont get sick of the colours too quickly.
@@ -258,25 +257,27 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		
 		// Initialise registry(prefs)
 		PrefsManager.initialise();
-		System.out.println("startMinimised = " + PrefsManager.prefStartMinimised);
-		System.out.println("capsSustain = " + PrefsManager.prefCapsSustain);
+		System.out.println("[MainClass.java] startMinimised = " + PrefsManager.prefStartMinimised);
+		System.out.println("[MainClass.java] capsSustain = " + PrefsManager.prefCapsSustain);
 		
 		// Initialise controllers. Pooled so not so much Garbage Collection. Not that that's even a problem xD
 		int[] cols = new int[] { colour1, colour2 };
 		ledContBacklit = new LEDBacklit(); ledContBacklit.setColours(cols);
 		ledContReactive = new LEDReactive(); ledContReactive.setColours(cols);
-		ledContWaveH = new LEDWaveH (); ledContWaveH.setColours(cols);
-		ledContWaveV = new LEDWaveV (); ledContWaveV.setColours(cols);
+		ledContWave = new LEDWave (); ledContWave.setColours(cols);
 		ledContTravel = new LEDTravel(); ledContTravel.setColours(cols);
 		
+		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } 
+		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {e.printStackTrace();}
+		
 		// Initialise GUI.
-		gui = new MainGUI();
+		gui = new MainGUI(true);
 		gui.initialise();
 		
 		//boolean wasFocussed = gui.frame.isFocused();
 		//GUIManager.frame.requestFocus();
 		capsOn = Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK);
-		System.out.println("Caps lock " + (capsOn ? "on" : "off") + " by default...");
+		System.out.println("[MainClass.java] Caps lock " + (capsOn ? "on" : "off") + " by default...");
 		
 		// May move argument handling into a seperate function?
 		if (args.length > 0) { 
@@ -297,7 +298,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     	hidServiceSpecs.setScanMode(ScanMode.SCAN_AT_FIXED_INTERVAL_WITH_PAUSE_AFTER_WRITE);
     	services = HidManager.getHidServices(hidServiceSpecs);
     	services.addHidServicesListener(this);
-    	System.out.println("HID services Now Starting...");
+    	System.out.println("[MainClass.java] HID services Now Starting...");
     	services.start();
     	HidDevice device = null;
     	
@@ -340,14 +341,31 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			
 			// Main loop
 			mainLoop();
+			System.out.println("[MainClass.java] Program killed");
 			device.close();
 		}
 		else {
-			System.err.println("DEVICE IS NULL");
+			System.err.println("[MainClass.java] DEVICE IS NULL");
 		}
 		
+		kill = true;
 		services.shutdown();
-		System.out.println("Applcation termination...");
+		
+		if (MainGUI.labelThreadRunning) {
+			System.out.println("[MainClass.java] Joining threads...");
+			MainGUI.labelThread.join();
+		}
+		
+		if (MainGUI.frmMainFrame != null) {
+			System.out.println("[MainClass.java] Disposign GUI Window");
+			MainGUI.frmMainFrame.dispose();
+			MainGUI.frmMainFrame = null;
+		}
+		
+		deinitialiseNotifyIcon ();
+		
+		System.out.println("[MainClass.java] Applcation termination...");
+		System.exit(0);
 	}
 	
 	private void mainLoop () throws InterruptedException {
@@ -370,23 +388,23 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			Thread.sleep(5);
 			while (!update) { Thread.sleep(1); }
 		}
-		System.out.println("start effect a complete");
+		System.out.println("[MainClass.java] start effect a complete");
 		final int offset = 10;
-		int[] colOld = new int[ledContWaveH.colours.length];
-		for (int i = 0; i < colOld.length; i++) { colOld[i] = ledContWaveH.colours[i]; }
-		ledContWaveH.setColours(new int[] { 0xFFFFFF00, 0x00000000 });
-		ledContWaveH.setWavePosition(-offset);
-		ledController = ledContWaveH;
+		int[] colOld = new int[ledContWave.colours.length];
+		for (int i = 0; i < colOld.length; i++) { colOld[i] = ledContWave.colours[i]; }
+		ledContWave.setColours(new int[] { 0xFFFFFF00, 0x00000000 });
+		ledContWave.setWavePosition(-offset);
+		ledController = ledContWave;
 		for (int i = 0; i < POSEIDON_KEYSX + offset + 1; i++) {
 			setLEDs(hidDevice);
-			update = ((LEDWaveH)ledController).updateStartEffect();
-			Thread.sleep(10);
+			update = ((LEDWave)ledController).updateStartEffect();
+			Thread.sleep(5);
 			while (!update) { Thread.sleep(1); }
 		}
-		System.out.println("start effect b complete");
-		ledContWaveH.setColours(colOld);
+		System.out.println("[MainClass.java] start effect b complete");
+		ledContWave.setColours(colOld);
 		ledController = prev;
-		System.out.println("Done start effect");
+		System.out.println("[MainClass.java] Done start effect");
 	}
 	
 	private void setLEDs (HidDevice device) {
@@ -419,7 +437,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			int valRG = device.sendFeatureReport(bufferRG, (byte)POSEIDON_START);
 			if (valRG < 0) { System.err.println("ERROR SENDING BUFFER[RG]: " + device.getLastErrorMessage()); }
 			
-			Thread.sleep(10); // Was 1, set to 10 to prevent weird colour thing,
+			Thread.sleep(10); // Was 1, set to 10 to prevent weird colour glitching issue,
 			
 			// Send BLU buffer
 			int valB = device.sendFeatureReport(bufferB, (byte)POSEIDON_START);
@@ -436,7 +454,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     			boolean open = device.open();
     			//System.err.println(open);
     			if (open) { 
-    				System.out.println(device);
+    				System.out.println("[MainClass.java] " + device);
     				hidDevice = device;
     				break;
     			}
@@ -451,14 +469,13 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		switch (ledMode) {
 			case Backlit: { ledController = ledContBacklit; } break;
 			case ReactiveBacklit: { ledController = ledContReactive; reactive = true; } break;
-			case WaveH: { ledController = ledContWaveH; } break;
-			case WaveV: { ledController = ledContWaveV; } break;
+			case Wave: { ledController = ledContWave; } break;
 			default: { ledController = ledContBacklit; } break;
 		}
 		
 		if (reactive) {
 			ledContReactive.setAllKeyLerpsZero();
-			System.out.println("Setting reactive lerps to zero.");
+			System.out.println("[MainClass.java] Setting reactive lerps to zero.");
 		}
 		
 		int idx = ledMode.getIdx();
@@ -478,7 +495,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 	private void initialiseNotifyIcon () {
 		trayIcon = null;
 		if (SystemTray.isSupported()) {
-			System.out.println("System tray supported... Adding icon.");
+			System.out.println("[MainClass.java] System tray supported... Adding icon.");
 			
 			itemShow = new MenuItem("Restore Window");
 			itemMin = new MenuItem("Minimise Window to Tray");
@@ -525,7 +542,17 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			}
 		}
 		else {
-			System.out.println("System tray NOT supported...");
+			System.out.println("[MainClass.java] System tray NOT supported...");
+		}
+	}
+	
+	private void deinitialiseNotifyIcon () {
+		if (trayIcon == null) { return; }
+		
+		if (SystemTray.isSupported()) {
+			System.out.println("[MainClass.java] De-initialising notify icon");
+			SystemTray tray = SystemTray.getSystemTray();
+			tray.remove(trayIcon);
 		}
 	}
 	
@@ -565,7 +592,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
     	if (d.getProductId() == PRODUCT_ID && d.getVendorId() == VENDOR_ID) {
     		d.close();
     		hidDevice = null;
-    		System.out.println("Poseidon Z RGB detached.");
+    		System.out.println("[MainClass.java] Poseidon Z RGB detached.");
     	}
     	
     	try { Thread.sleep(500); } 
@@ -587,7 +614,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 
     	HidDevice d = event.getHidDevice();
     	if (d.getProductId() == PRODUCT_ID && d.getVendorId() == VENDOR_ID) {
-    		System.out.println("Poseidon Z RGB attached.");
+    		System.out.println("[MainClass.java] Poseidon Z RGB attached.");
     		
     		try { 
     			hidDevice = getDevice();

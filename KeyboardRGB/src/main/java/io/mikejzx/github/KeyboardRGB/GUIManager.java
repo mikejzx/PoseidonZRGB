@@ -22,10 +22,13 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
 
+import io.mikejzx.github.GUI.GUISquare;
 import io.mikejzx.github.KeyboardRGB.MainClass.LEDMode;
 
 /*
  * Handles the Graphical User-Interface of the application
+ * EDIT 01.12.2018: THIS CLASS IS NO LONGER USED FOR HANDLING GUI.
+ * SEE MainGUI.java FROM PKG: io.mikejzx.github.GUI
 */
 
 public class GUIManager {
@@ -145,7 +148,7 @@ public class GUIManager {
 		JPanel panBacklit = tabPanels.get(LEDMode.Backlit.getIdx());
 		buttonColBacklit = new JButton("Set Colour");
 		buttonColBacklit.addActionListener(frame);
-		sqrColBacklit = new GUISquare(0, 0, new Color(255, 0, 0));
+		//sqrColBacklit = new GUISquare(0, 0, new Color(255, 0, 0));
 		panBacklit.add(buttonColBacklit);
 		panBacklit.add(sqrColBacklit);
 		
@@ -155,8 +158,8 @@ public class GUIManager {
 		buttonCol1React.addActionListener(frame);
 		buttonCol2React = new JButton("Set Colour (Secondary)");
 		buttonCol2React.addActionListener(frame);
-		sqrColReact1 = new GUISquare(0, 0, new Color(255, 0, 0));
-		sqrColReact2 = new GUISquare(0, 0, new Color(255, 0, 0));
+		//sqrColReact1 = new GUISquare(0, 0, new Color(255, 0, 0));
+		//sqrColReact2 = new GUISquare(0, 0, new Color(255, 0, 0));
 		panReactive.add(buttonCol1React);
 		panReactive.add(buttonCol2React);
 		panReactive.add(sqrColReact1);

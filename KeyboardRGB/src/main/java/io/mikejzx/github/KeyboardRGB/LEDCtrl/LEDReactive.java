@@ -9,7 +9,7 @@ import io.mikejzx.github.KeyboardRGB.Utils;
 
 public class LEDReactive implements ILEDController, ILEDListenableKeys {
 
-	private int[] colours; 
+	public int[] colours; 
 	
 	// This contains the lerp values foreach key. 0 = start colour, 1 = end colour
 	private float[][] keyLerps;
