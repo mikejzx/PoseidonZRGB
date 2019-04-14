@@ -135,12 +135,14 @@ public class MainGUI implements ChangeListener, ItemListener {
 		JPanel panel_back = new JPanel();
 		JPanel panel_reac = new JPanel();
 		JPanel panel_wave = new JPanel();
+		JPanel panel_waveg = new JPanel();
 		JPanel panel_rain = new JPanel();
 		JPanel panel_rand = new JPanel();
 		JPanel[] tabPanels = new JPanel[] {
 			panel_back,
 			panel_reac,
 			panel_wave,
+			panel_waveg,
 			panel_rain,
 			panel_rand
 		};
@@ -254,6 +256,18 @@ public class MainGUI implements ChangeListener, ItemListener {
 					.addContainerGap(250, Short.MAX_VALUE))
 		);
 		panel_wave.setLayout(gl_panel_wave);
+		
+		tabs_ledmode.addTab("waveg", null, panel_waveg, null);
+		GroupLayout gl_panel_waveg = new GroupLayout(panel_waveg);
+		gl_panel_waveg.setHorizontalGroup(
+			gl_panel_waveg.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 373, Short.MAX_VALUE)
+		);
+		gl_panel_waveg.setVerticalGroup(
+			gl_panel_waveg.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 152, Short.MAX_VALUE)
+		);
+		panel_waveg.setLayout(gl_panel_waveg);
 		tabs_ledmode.addTab("rain", null, panel_rain, null);
 		GroupLayout gl_panel_rain = new GroupLayout(panel_rain);
 		gl_panel_rain.setHorizontalGroup(

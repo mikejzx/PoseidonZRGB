@@ -4,7 +4,7 @@
 
   <groupId>io.mikejzx.github</groupId>
   <artifactId>KeyboardRGB</artifactId>
-  <version>0.0.2_06-SNAPSHOT(alpha)</version>
+  <version>0.0.3_01-SNAPSHOT(alpha)</version>
   <packaging>jar</packaging>
 
   <name>KeyboardRGB</name>
