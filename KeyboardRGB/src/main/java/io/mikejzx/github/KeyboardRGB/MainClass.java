@@ -213,7 +213,8 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 		}
 		
 		// Check if version matches with .XML file. If not throw an error to remind me xD
-		final Properties prop = new Properties();
+		// REMOVE THIS FROM RELEASE BUILDS!
+		/*final Properties prop = new Properties();
 		prop.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
 		String xmlVer = prop.getProperty("swversion");
 		if (xmlVer.equals(SOFTWARE_VERSION)) {
@@ -224,7 +225,7 @@ public class MainClass implements NativeKeyListener, HidServicesListener
 			String msg = "The version in pom.xml does not match static final String SOFTWARE_VERSION from MainClass.java !\nTELL THE DEVELOPER TO CHANGE IT GODDAMNIT.";
 			String[] options = new String[] { "O.K" };
 			JOptionPane.showOptionDialog(null, msg, "Poseidon Z RGB Controller ERROR", JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null, options, options[0]);
-		}
+		}*/
 		
 		// Randomise on start so I dont get sick of the colours too quickly.
 		int rand = ThreadLocalRandom.current().nextInt(0, 3);
