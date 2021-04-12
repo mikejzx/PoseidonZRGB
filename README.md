@@ -1,15 +1,20 @@
 # PoseidonZRGB
-Attempting to set the LED colours from code !
 
-This project is an attempt to set the colours of the TTeSports Poseidon Z keyboard's LEDs.<br>
+Note: this project is no longer in development.
 
-I begun developing this because I find the official software of ThermalTake's Poseidon Z to be utter garbage, as it lacks any form of customisation, and appears to have had it's UI designed by 12-year old kids.<br>
-The point of my software is not really to provide an alternative, but to provide instead a way of personalising the keyboard. The light feature I wanted most on this keyboard was a cross between the "Reactive", and "Static-Backlit" light modes. I figured that if I could find a way to control the LED's from code, then I'd have complete control over how it looks, and could make it exactly as I wanted. Thanks to this software, I made it possible to mix these two light-modes,
-and am planning to add more in future!
+This is simply an LED controller for the TTeSports Poseidon Z RGB keyboard.  This was written because I found the official software to be severely lacking in both functionality on customisability.
 
-# Note
-Currently the project is completely in development, and may contain bugs. Please report bugs here in the 'Issues' section.
+The software is functional, however, as it updates the keyboard RGBs on a periodic basis, there is some flicker that may be annoying. 
 
-# Features of this program
-* *Smooth*, **classy**, _default_ Java user-interface. This helps deter any Microsoft 'Metro' fanboys who think 'minimalism' is the way to go.<br>
-* **4 Lighting Modes** are currently supported! 'Backlit', 'Backlit+Reactive', 'Wave', and 'Global Wave'! This enormous number will grow even larger in the future! (Maybe)
+Lighting modes:
+
+* Backlit
+* Backlit+reactive
+* Wave
+* "Global wave"
+
+I don't recommend actually using this software.
+
+# Disclaimer
+
+I am not responsible if this software destroys your keyboard. Use at your own risk!
